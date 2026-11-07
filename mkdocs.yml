@@ -1,11 +1,22 @@
 site_name: libsoa
-repo_url: https://github.com/quasar-chunawala/libsoa
+site_url: https://quasar-chunawala.github.io/qc-soa
+repo_url: https://quasar-chunawala.github.io/qc-soa
+repo_name: quasar-chunawala/qc-soa
 docs_dir: docs          # folder with your .md files (this is the default)
 
 theme:
   name: material        # the popular "Material for MkDocs" theme
+  features: [navigation.sections, content.code.copy]
+
+markdown_extensions:
+  -pymdownx.highlight
+  -pymdownx.superfences
+  -admonition
+  -toc: { permalink: true }
 
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
-  - API Reference: api.md
+  - Setup:
+    -Linux: SetupLinux.md
+    -MacOS: SetupMacOS.md
+    -Windows: SetupWin64.md

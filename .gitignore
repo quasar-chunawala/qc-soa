@@ -55,3 +55,6 @@ experimental/tagged_union/traces/
 
 # VSCode settings
 .vscode/
+.cache/
+.venv/
+site/
