@@ -1,6 +1,7 @@
 #ifndef SOA_SPLIT_BUFFER_H
 #define SOA_SPLIT_BUFFER_H
 
+#include <compare>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -69,7 +70,7 @@ struct soa_split_buffer {
   };
   */
 
-#if __cpp_impl_reflection
+
   consteval {
     auto data_members = std::define_static_array(get_all_fields(^^T));
     define_aggregate(
@@ -132,7 +133,6 @@ struct soa_split_buffer {
       return isEqual;
     }
   };
-#endif
 
   /**
    * @brief StorageBlock type is used by the allocate_memory functions as a unit
@@ -260,6 +260,26 @@ struct soa_split_buffer {
       auto [... lhs_ptrs] = ptrs_;
       auto [... rhs_ptrs] = rhs.ptrs_;
       return ((lhs_ptrs == rhs_ptrs) && ...);
+    }
+
+    constexpr friend bool operator<(const iterator &lhs, const iterator &rhs) {
+      auto [... lhs_ptrs] = lhs.ptrs_;
+      auto [... rhs_ptrs] = rhs.ptrs_;
+      return ((lhs_ptrs < rhs_ptrs) && ...);
+    }
+
+    constexpr friend bool operator>(const iterator &lhs, const iterator &rhs) {
+      auto [... lhs_ptrs] = lhs.ptrs_;
+      auto [... rhs_ptrs] = rhs.ptrs_;
+      return ((lhs_ptrs > rhs_ptrs) && ...);
+    }
+
+    constexpr friend bool operator>=(const iterator &lhs, const iterator &rhs) {
+      return lhs > rhs || lhs == rhs;
+    }
+
+    constexpr friend bool operator<=(const iterator &lhs, const iterator &rhs) {
+      return lhs < rhs || lhs == rhs;
     }
 
     Pointers ptrs_;
@@ -584,8 +604,8 @@ struct soa_split_buffer {
    * @param new_end
    */
   constexpr void destruct_at_end(iterator new_end) {
-    ASSERT_ARGUMENT_WITHIN_DOMAIN(new_end >= begin() && new_end < end(),
-                                  "new_last must in [begin(),end())");
+    ASSERT_ARGUMENT_WITHIN_DOMAIN(new_end >= begin() && new_end <= end(),
+                                  "new_last must in [begin(),end()]");
     CONTRACT_POSTCONDITION(
         size_ == new_end - begin(),
         "The container size attribute must be updated to end() - begin()");
