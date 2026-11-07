@@ -25,8 +25,8 @@ set(LIBSOA_SOURCES "")
 
 set(LIBSOA_HEADERS
     "${LIBSOA_ROOT}/configuration/hardening.h"
-    "${LIBSOA_ROOT}/utilities/exception_guard.h"
-    "${LIBSOA_ROOT}/utilities/contract_assert.h"
+    "${LIBSOA_ROOT}/contracts/exception_guard.h"
+    "${LIBSOA_ROOT}/contracts/contract_assert.h"
     "${LIBSOA_HEADERS_ROOT}/utils.h"
     "${LIBSOA_HEADERS_ROOT}/construction_transaction.h"
     "${LIBSOA_HEADERS_ROOT}/split_buffer.h"
@@ -37,6 +37,10 @@ set(LIBSOA_HEADERS
 # libsoa is a header-only library
 add_library(libsoa INTERFACE)
 add_library(soa::soa ALIAS libsoa)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  target_compile_definitions(libsoa INTERFACE HARDENING_MODE=HARDENING_MODE_DEBUG)
+endif()
 
 target_sources(libsoa
     INTERFACE 

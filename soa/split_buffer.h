@@ -10,9 +10,9 @@
 #include <tuple>
 #include <type_traits>
 
+#include <contracts/contract_assert.h>
 #include <soa/construction_transaction.h>
 #include <soa/utils.h>
-#include <utilities/contract_assert.h>
 
 namespace soa::detail {
 template <typename Iterator> struct is_move_iterator {
@@ -439,14 +439,14 @@ struct soa_split_buffer {
    */
   constexpr void copy_construct_at_end_with_size(size_type n,
                                                  const_reference value) {
-    XSTD_ASSERT_ARGUMENT_WITHIN_DOMAIN(
+    ASSERT_ARGUMENT_WITHIN_DOMAIN(
         n > 0, "The number of objects to construct n, must satisfy n > 0");
-    XSTD_ASSERT_ARGUMENT_WITHIN_DOMAIN(
+    ASSERT_ARGUMENT_WITHIN_DOMAIN(
         size() + n <= capacity(),
         "The container must have sufficient back spare capacity");
-    XSTD_RECORD_OLD_VALUE(old_size, size());
-    XSTD_CONTRACT_POSTCONDITION(size() == old_size + n,
-                                "The container size attribute must grow by n");
+    RECORD_OLD_VALUE(old_size, size());
+    CONTRACT_POSTCONDITION(size() == old_size + n,
+                           "The container size attribute must grow by n");
 
     // RAII wrapper that provides basic exception guarantee when constructing
     // value n times.
@@ -470,10 +470,10 @@ struct soa_split_buffer {
   template <std::forward_iterator ForwardIterator>
   constexpr void copy_construct_at_end_with_size(ForwardIterator first,
                                                  ForwardIterator last) {
-    XSTD_ASSERT_ARGUMENT_WITHIN_DOMAIN(
+    ASSERT_ARGUMENT_WITHIN_DOMAIN(
         last > first,
         "The number of objects to construct n, must satisfy n > 0");
-    XSTD_ASSERT_ARGUMENT_WITHIN_DOMAIN(
+    ASSERT_ARGUMENT_WITHIN_DOMAIN(
         size() + std::distance(first, last),
         "The container must have sufficient back spare capacity");
     // RAII wrapper that provides basic exception guarantee when constructing n
@@ -584,9 +584,9 @@ struct soa_split_buffer {
    * @param new_end
    */
   constexpr void destruct_at_end(iterator new_end) {
-    XSTD_ASSERT_ARGUMENT_WITHIN_DOMAIN(new_end >= begin() && new_end < end(),
-                                       "new_last must in [begin(),end())");
-    XSTD_CONTRACT_POSTCONDITION(
+    ASSERT_ARGUMENT_WITHIN_DOMAIN(new_end >= begin() && new_end < end(),
+                                  "new_last must in [begin(),end())");
+    CONTRACT_POSTCONDITION(
         size_ == new_end - begin(),
         "The container size attribute must be updated to end() - begin()");
     auto iter = end();
@@ -658,10 +658,10 @@ struct soa_split_buffer {
    *
    */
   constexpr soa_split_buffer(size_type capacity, size_type begin_offset) {
-    XSTD_ASSERT_ARGUMENT_WITHIN_DOMAIN(capacity > 0,
-                                       "The capacity must be greater than 0");
-    XSTD_ASSERT_ARGUMENT_WITHIN_DOMAIN(
-        start >= 0 && start < capacity,
+    ASSERT_ARGUMENT_WITHIN_DOMAIN(capacity > 0,
+                                  "The capacity must be greater than 0");
+    ASSERT_ARGUMENT_WITHIN_DOMAIN(
+        begin_offset >= 0 && begin_offset < capacity,
         "Cannot have a start point outside the capacity");
     std::byte *raw_mem = allocate_memory(capacity);
     set_pointers(raw_mem, capacity);
