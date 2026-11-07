@@ -1,11 +1,10 @@
-# `qc::xstd`
+# `libsoa`
 
-[![Linux x86 build](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/linux.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/linux.yml)
-[![MacOS build](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/macos.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/macos.yml)
-[![Win32/64 build](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/windows.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/windows.yml)
-[![C++20/23/26 versions compatibility build](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/cxx-versions.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/cxx-versions.yml)
+[![Linux x86 build](https://github.com/quasar-chunawala/qc-soa/actions/workflows/linux.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-soa/actions/workflows/linux.yml)
+[![MacOS build](https://github.com/quasar-chunawala/qc-soa/actions/workflows/macos.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-soa/actions/workflows/macos.yml)
+[![Win32/64 build](https://github.com/quasar-chunawala/qc-soa/actions/workflows/windows.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-soa/actions/workflows/windows.yml)
 
-A collection of standard containers, RAII wrappers for modern C++ and used in quantitative trading and finance.
+`libsoa` is modern C++ (C++26) library providing a full spectrum of SoA(Structure-Of-Arrays) data-structures.
 
 ## Configure and Build
 
@@ -30,12 +29,9 @@ cmake --build --preset <preset-name>
 
 ## Compatibility
 
-- **Language Standard**: C++20
-  - *Note*: `std::meta` requires C++26.
+- **Language Standard**: C++26
 - **Compilers Tested**: 
-  - Clang 18, 19, 20, 21, 22
-  - GCC 12, 13, 14, 15, 16.2
-  - MSVC 17(VS 2022), 18(2026)
+  - GCC 16.2
   
 
 ## Integration
@@ -48,13 +44,13 @@ This library is header-only and can be copied directly into your project or fetc
 include(FetchContent)
 
 FetchContent_Declare(
-  qc_xstd
-  GIT_REPOSITORY https://github.com/quasar-chunawala/qc-xstd.git
+  libasoa
+  GIT_REPOSITORY https://github.com/quasar-chunawala/qc-soa.git
   GIT_TAG        v1.0.0
 )
-FetchContent_MakeAvailable(xstd)
+FetchContent_MakeAvailable(soa)
 
-target_link_libraries(your_target PRIVATE xstd)
+target_link_libraries(your_target PRIVATE soa)
 ```
 
 ## Configuration Macros
@@ -73,7 +69,7 @@ Runtime precondition checks (null pointers, out-of-bounds indices, invalid itera
 ```cpp
 #define XSTD_HARDENING_MODE XSTD_HARDENING_MODE_DEBUG
 #define XSTD_ASSERT_MODE XSTD_ASSERT_MODE_LOG_TRAP
-#include <core/containers/vector.h>
+#include <soa/vector.h>
 ```
 
 ### Description

@@ -11,16 +11,7 @@ jobs:
         strategy:
             matrix:
                 sys:
-                    - { compiler: 'gcc', version: '12', flags: '-std=c++20 -Wall -Wpedantic'}        
-                    - { compiler: 'gcc', version: '13', flags: '-std=c++20 -Wall -Wpedantic'}
-                    - { compiler: 'gcc', version: '14', flags: '-std=c++20 -Wall -Wpedantic'} 
-                    - { compiler: 'gcc', version: '15', flags: '-std=c++20 -Wall -Wpedantic'}
                     - { compiler: 'gcc', version: '16', flags: '-std=c++26 -Wall -Wpedantic -freflection'}
-                    - { compiler: 'clang', version: '18', flags: '-std=c++20 -Wall -Wpedantic'}        
-                    - { compiler: 'clang', version: '19', flags: '-std=c++20 -Wall -Wpedantic'}
-                    - { compiler: 'clang', version: '20', flags: '-std=c++20 -Wall -Wpedantic'}
-                    - { compiler: 'clang', version: '21', flags: '-std=c++20 -Wall -Wpedantic'}
-
         steps:
         - name: Checkout
           uses: actions/checkout@v6
@@ -34,18 +25,6 @@ jobs:
             sudo apt-get --no-install-suggests --no-install-recommends install g++-$GCC_VERSION
             sudo apt-get update
             echo "CXX=g++-$GCC_VERSION" >> $GITHUB_ENV
-
-        - name: Setup compiler
-          if: ${{ matrix.sys.compiler == 'clang' }}
-          run: |
-            LLVM_VERSION=${{ matrix.sys.version }}
-            wget https://apt.llvm.org/llvm.sh
-            chmod +x llvm.sh
-            sudo ./llvm.sh $LLVM_VERSION
-            sudo apt-get --no-install-suggests --no-install-recommends install clang-$LLVM_VERSION || exit 1
-            sudo apt-get --no-install-suggests --no-install-recommends install g++ g++-multilib || exit 1
-            CXX=clang++-$LLVM_VERSION
-            echo "CXX=$CXX" >> $GITHUB_ENV
 
         - name: Configure
           env: 
