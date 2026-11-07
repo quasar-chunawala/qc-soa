@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 # `libsoa`
 
 [![Linux x86 build](https://github.com/quasar-chunawala/qc-soa/actions/workflows/linux.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-soa/actions/workflows/linux.yml)

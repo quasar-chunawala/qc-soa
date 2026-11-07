@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 # Setup
 
 The following VSCode extensions are required: C/C++ extension pack, clangd, CMake Tools, CMake Language Support, CodeLLDB, CS 128 Clang-Tidy, Git Blame, Git Graph, Git History, VSCode Remote extension pack,
