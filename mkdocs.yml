@@ -1,0 +1,11 @@
+site_name: libsoa
+repo_url: https://github.com/quasar-chunawala/libsoa
+docs_dir: docs          # folder with your .md files (this is the default)
+
+theme:
+  name: material        # the popular "Material for MkDocs" theme
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference: api.md

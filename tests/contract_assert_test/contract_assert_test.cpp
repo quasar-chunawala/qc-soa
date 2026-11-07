@@ -1,0 +1,1 @@
+#include <contracts/contract_assert.h>

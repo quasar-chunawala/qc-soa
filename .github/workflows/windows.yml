@@ -1,0 +1,41 @@
+name: Windows build
+on: [push, pull_request]
+jobs:
+  build-windows-x86:
+    name: 'MSVC ${{ matrix.os }}, ${{ matrix.target }}'
+    defaults:
+      run:
+        shell: bash {0}
+    strategy:
+      matrix:
+        os:
+          - 2022
+          - 2025
+        target:
+          - x86
+          - x64
+    runs-on: windows-${{ matrix.os }}
+    steps:
+    - name: Setup compiler
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.target }}
+    
+    - name: Setup Ninja
+      run: |
+        python3 -m pip install --upgrade pip setuptools wheel
+        python3 -m pip install ninja        
+
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Configure
+      env:
+        MSYS_NO_PATHCONV: 1
+      run: cmake -B build -G Ninja -DCMAKE_CXX_COMPILER=cl -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_FLAGS=/W4 /permissive- /EHsc"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure --timeout 60 --parallel 2  

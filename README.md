@@ -1,0 +1,85 @@
+# `qc::xstd`
+
+[![Linux x86 build](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/linux.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/linux.yml)
+[![MacOS build](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/macos.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/macos.yml)
+[![Win32/64 build](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/windows.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/windows.yml)
+[![C++20/23/26 versions compatibility build](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/cxx-versions.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-xstd/actions/workflows/cxx-versions.yml)
+
+A collection of standard containers, RAII wrappers for modern C++ and used in quantitative trading and finance.
+
+## Configure and Build
+
+To list all presets, execute:
+
+```bash
+cmake --list-presets
+```
+
+To configure and build the code, run:
+
+```
+cmake --preset <preset-name>
+cmake --build --preset <preset-name>
+```
+
+- To install dependencies for Linux, follow the instructions in [SetupLinux.md](./SetupLinux.md).
+
+- To install dependencies for Win64, refer [SetupWin64.md](./SetupWin64.md).
+
+- To install dependencies for MacOS, refer [SetupMacOS.md](./SetupMacOS.md)
+
+## Compatibility
+
+- **Language Standard**: C++20
+  - *Note*: `std::meta` requires C++26.
+- **Compilers Tested**: 
+  - Clang 18, 19, 20, 21, 22
+  - GCC 12, 13, 14, 15, 16.2
+  - MSVC 17(VS 2022), 18(2026)
+  
+
+## Integration
+
+This library is header-only and can be copied directly into your project or fetched via CMake.
+
+### CMake FetchContent
+
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+  qc_xstd
+  GIT_REPOSITORY https://github.com/quasar-chunawala/qc-xstd.git
+  GIT_TAG        v1.0.0
+)
+FetchContent_MakeAvailable(xstd)
+
+target_link_libraries(your_target PRIVATE xstd)
+```
+
+## Configuration Macros
+
+### Hardening and Contract Checks
+
+Runtime precondition checks (null pointers, out-of-bounds indices, invalid iterator ranges) can be configured globally:
+
+| Macro | Options / Default | Description |
+|---|---|---|
+| `XSTD_HARDENING_MODE` | `XSTD_HARDENING_MODE_NONE` (Default)<br>`XSTD_HARDENING_MODE_FAST`<br>`XSTD_HARDENING_MODE_EXTENSIVE`<br>`XSTD_HARDENING_MODE_DEBUG` | Enables precondition checks across all API boundaries. |
+| `XSTD_ASSERT_MODE` | `XSTD_ASSERT_MODE_LOG_TRAP`(Default)<br>`XSTD_ASSERT_MODE_NONE`<br>`XSTD_ASSERT_MODE_TRAP`<br>`XSTD_ASSERT_MODE_ABORT`<br>`XSTD_ASSERT_MODE_LOG_ABORT` | Defines failure action when a hardening assertion triggers. |
+
+### Example
+
+```cpp
+#define XSTD_HARDENING_MODE XSTD_HARDENING_MODE_DEBUG
+#define XSTD_ASSERT_MODE XSTD_ASSERT_MODE_LOG_TRAP
+#include <core/containers/vector.h>
+```
+
+### Description
+
+- `XSTD_HARDENING_MODE_NONE`. When hardening mode is turned off, all checks compile away entirely with zero runtime overhead.
+- `XSTD_HARDENING_MODE_FAST`. A set of securitiy critical checks that can be done with relatively little overhead in constant time and intended to be used in production. 
+- `XSTD_HARDENING_MODE_EXTENSIVE`. Contains all the checks from the fast mode and some additional checks that incur relatively little overhead but aren't security critical. 
+- `XSTD_DEBUG_MODE`. This mode should be used in non-production environments(such as test-suites, CI or local development).
+
