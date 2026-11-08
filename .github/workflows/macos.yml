@@ -9,23 +9,35 @@ jobs:
                     # - 14
                     - 15
                     - 15-intel
+                gcc: ['16']
         runs-on: macos-${{ matrix.os }}
-        name: 'macos-${{ matrix.os }}'
+        name: 'macos-${{ matrix.os }} - gcc ${{ matrix.gcc }}'
         steps:
         - name: Checkout
           uses: actions/checkout@v6
 
+        - name: Setup compiler
+          run: |
+            brew update
+            brew install gcc@${{ matrix.gcc }}
+            CXX="$(brew --prefix gcc@${{ matrix.gcc }})/bin/g++-${{ matrix.gcc }}"
+            "$CXX" --version
+            # libsoa needs gcc >= 16.2; fail early if Homebrew gave us something older
+            ver="$("$CXX" -dumpfullversion)"
+            if [ "$(printf '%s\n' 16.2 "$ver" | sort -V | head -n1)" != "16.2" ]; then
+              echo "::error::Need gcc >= 16.2, got $ver"; exit 1
+            fi
+            echo "CXX=$CXX" >> "$GITHUB_ENV"
+
         - name: Configure
           run: |
             cmake -B build \
+            -DCMAKE_CXX_COMPILER="$CXX" \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_FLAGS="-std=c++26 -Wall -Wpedantic -freflection" \
-            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+            -DCMAKE_CXX_FLAGS="-std=c++26 -Wall -Wpedantic -freflection"
 
         - name: Build
           run: |
             cmake --build build --verbose
         - name: Test
-          run: ctest --test-dir build --output-on-failure --timeout 60 --parallel 2            
-            
-
+          run: ctest --test-dir build --output-on-failure --timeout 60 --parallel 2
