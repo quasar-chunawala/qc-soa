@@ -2,26 +2,36 @@ name: Windows build
 on: [push, pull_request]
 jobs:
   build-windows-gcc:
-    name: 'MSVC ${{ matrix.os }}, ${{ matrix.target }}'
+    name: 'GCC windows-${{ matrix.os }}, ${{ matrix.target }} (${{ matrix.msystem }})'
     defaults:
       run:
         shell: msys2 {0}
     strategy:
+      fail-fast: false
       matrix:
+        os:
+          - 2022
+          - 2025
+        target:
+          - x64
+          - x86
         include:
           - { target: x64, msystem: UCRT64,  pkg: ucrt-x86_64 }
           - { target: x86, msystem: MINGW32, pkg: i686 }
     runs-on: windows-${{ matrix.os }}
     steps:
-    - name: Install MingW
-      - uses: msys2/setup-msys2@v2
+    - name: Install MinGW
+      uses: msys2/setup-msys2@v2
       with:
         msystem: ${{ matrix.msystem }}
         update: true
         install: >-
-          mingw-w64-ucrt-x86_64-gcc
-          mingw-w64-ucrt-x86_64-cmake
-          mingw-w64-ucrt-x86_64-ninja     
+          mingw-w64-${{ matrix.pkg }}-gcc
+          mingw-w64-${{ matrix.pkg }}-cmake
+          mingw-w64-${{ matrix.pkg }}-ninja
+
+    - name: Show compiler
+      run: g++ --version
 
     - name: Checkout
       uses: actions/checkout@v6
