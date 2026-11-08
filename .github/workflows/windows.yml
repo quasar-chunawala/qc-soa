@@ -1,38 +1,33 @@
 name: Windows build
 on: [push, pull_request]
 jobs:
-  build-windows-x86:
+  build-windows-gcc:
     name: 'MSVC ${{ matrix.os }}, ${{ matrix.target }}'
     defaults:
       run:
-        shell: bash {0}
+        shell: msys2 {0}
     strategy:
       matrix:
-        os:
-          - 2022
-          - 2025
-        target:
-          - x86
-          - x64
+        include:
+          - { target: x64, msystem: UCRT64,  pkg: ucrt-x86_64 }
+          - { target: x86, msystem: MINGW32, pkg: i686 }
     runs-on: windows-${{ matrix.os }}
     steps:
-    - name: Setup compiler
-      uses: ilammy/msvc-dev-cmd@v1
+    - name: Install MingW
+      - uses: msys2/setup-msys2@v2
       with:
-        arch: ${{ matrix.target }}
-    
-    - name: Setup Ninja
-      run: |
-        python3 -m pip install --upgrade pip setuptools wheel
-        python3 -m pip install ninja        
+        msystem: ${{ matrix.msystem }}
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-ninja     
 
     - name: Checkout
       uses: actions/checkout@v6
 
     - name: Configure
-      env:
-        MSYS_NO_PATHCONV: 1
-      run: cmake -B build -G Ninja -DCMAKE_CXX_COMPILER=cl -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_FLAGS=/W4 /permissive- /EHsc"
+      run:  cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-std=c++26 -Wall -Wpedantic -freflection"
 
     - name: Build
       run: cmake --build build
