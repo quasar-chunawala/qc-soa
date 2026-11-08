@@ -20,7 +20,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Configuring pre-condition checks: configuration.md
+  - Runtime pre-condition checks: configuration.md
   - Setup:
       - Linux: SetupLinux.md
       - MacOS: SetupMacOS.md
