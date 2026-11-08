@@ -1,5 +1,23 @@
 # Configuration Macros
 
+## Contracts
+
+A contract is a formal interface specification for a software component such as a class or member-function. It is a set of conditions that express expectations on how the component interoperates with other components of the program.
+
+A contract violation occurs when a condition that is a part of the contract does not hold.
+
+A pre-condition is part of the function contract where the responsibility of satisfying it rests with the caller. Generally, these requirements are placed on the arguments passed to the function upon entry into the function.
+
+A postcondition is a part of the function contract where the responsibilty of satisfying the condition rests with the callee; the implementer of the function itself. These are generally conditions that will hold true regarding the return value of the function when it completes execution normally.
+
+An invariant is a condition on the state of an object, or a set of objects, that is maintained over a certain amount of time. 
+
+A class invariant is a condition that a class type maintains throughout the lifetime of an object. There are other kinds of invariants such as loop invariants. Often these are expected to hold on the entry or exit of functions
+
+libsoa provides several hardening modes, where each mode enables a set of assertions that prevent UB caused by contract violations of the library. Different hardening modes make different tradeoffs between checking and runtime performance.
+
+If the user does not configure the hardening level, default to `HARDENING_MODE_NONE`
+
 ## Hardening and Contract Checks
 
 Runtime precondition checks (null pointers, out-of-bounds indices, invalid iterator ranges) can be configured globally:
