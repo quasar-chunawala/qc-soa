@@ -40,7 +40,7 @@ set(LIBSOA_TESTS_HEADERS
 
 set(LIBSOA_TESTS_SOURCES
     "${LIBSOA_TESTS_ROOT}/contract_assert_test/contract_assert_test.cpp"
-    "${LIBSOA_TESTS_ROOT}/split_buffer_test/soa_split_buffer_test.cpp"
+    "${LIBSOA_TESTS_ROOT}/split_buffer_test/split_buffer_test.cpp"
 )
 
 add_executable(libsoa_tests)

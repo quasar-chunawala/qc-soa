@@ -17,7 +17,7 @@ namespace soa {
 	namespace flat_internal {
 
 		template <typename T, typename Alloc = std::allocator<T>> class soa_vector_flat {
-			using SplitBuffer = soa::detail::soa_split_buffer<T, Alloc>;
+			using SplitBuffer = soa::detail::split_buffer<T, Alloc>;
 			constexpr void grow() {
 				// 1. allocate new storage
 				// constexpr size_t growth_factor = 2;

@@ -1,8 +1,8 @@
+#include <gtest/gtest.h>
+#include <memory>
 #include <soa/construction_transaction.h>
 #include <soa/split_buffer.h>
 #include <soa/utils.h>
-#include <gtest/gtest.h>
-#include <memory>
 
 namespace {
 	template <std::size_t Size, std::size_t Align> struct alignas(Align) Blob {
@@ -109,19 +109,19 @@ TEST(SoaSplitBufferTest, DefaultConstructor) {
 		double x_;
 		double y_;
 	};
-	soa::detail::soa_split_buffer<Point2D> buffer;
+	soa::detail::split_buffer<Point2D> buffer;
 	EXPECT_EQ(buffer.size(), 0);
 	EXPECT_EQ(buffer.capacity(), 0);
 }
 
 TEST(SoaSplitBufferTest, CapacityAndBeginOffsetConstructor) {
-	soa::detail::soa_split_buffer<Vec3> split_buffer(1000, 250);
+	soa::detail::split_buffer<Vec3> split_buffer(1000, 250);
 	EXPECT_EQ(split_buffer.size(), 0);
 	EXPECT_EQ(split_buffer.capacity(), 1000);
 }
 
 TEST(SoaSplitBufferTest, ConstructAtEndWithSizeTest) {
-	soa::detail::soa_split_buffer<Vec3> buf(1000, 250);
+	soa::detail::split_buffer<Vec3> buf(1000, 250);
 	EXPECT_EQ(buf.size(), 0);
 	EXPECT_EQ(buf.capacity(), 1000);
 

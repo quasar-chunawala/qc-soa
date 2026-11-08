@@ -10,7 +10,7 @@
 #include <utility>
 
 namespace soa::detail {
-	template <typename T, typename Allocator> struct soa_split_buffer;
+	template <typename T, typename Allocator> struct split_buffer;
 
 	/**
 	 * @brief  ConstructionTransaction is an RAII wrapper used for book-keeping. If the client iteratively
@@ -24,27 +24,27 @@ namespace soa::detail {
 	 * @tparam Iterator
 	 */
 	template <typename T, typename Alloc, typename Iterator> struct ConstructionTransaction {
-		ConstructionTransaction(soa_split_buffer<T, Alloc> *parent, Iterator pos, Iterator end);
+		ConstructionTransaction(split_buffer<T, Alloc> *parent, Iterator pos, Iterator end);
 
-		ConstructionTransaction(soa_split_buffer<T, Alloc> *parent, Iterator pos, std::size_t n);
+		ConstructionTransaction(split_buffer<T, Alloc> *parent, Iterator pos, std::size_t n);
 
 		~ConstructionTransaction();
-		soa_split_buffer<T, Alloc> *parent_;
+		split_buffer<T, Alloc> *parent_;
 		Iterator pos_;
 		const Iterator end_;
 
-		friend class soa_split_buffer<T, Alloc>;
+		friend class split_buffer<T, Alloc>;
 	};
 
 	template <typename T, typename Alloc, typename Iterator>
-	ConstructionTransaction<T, Alloc, Iterator>::ConstructionTransaction(soa_split_buffer<T, Alloc> *parent,
-	                                                                     Iterator pos, Iterator end)
+	ConstructionTransaction<T, Alloc, Iterator>::ConstructionTransaction(split_buffer<T, Alloc> *parent, Iterator pos,
+	                                                                     Iterator end)
 	    : parent_{parent}, pos_{pos}, end_{end} {
 	}
 
 	template <typename T, typename Alloc, typename Iterator>
-	ConstructionTransaction<T, Alloc, Iterator>::ConstructionTransaction(soa_split_buffer<T, Alloc> *parent,
-	                                                                     Iterator pos, std::size_t n)
+	ConstructionTransaction<T, Alloc, Iterator>::ConstructionTransaction(split_buffer<T, Alloc> *parent, Iterator pos,
+	                                                                     std::size_t n)
 	    : parent_{parent}, pos_{pos}, end_{pos + n} {
 	}
 

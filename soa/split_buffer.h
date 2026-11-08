@@ -51,7 +51,7 @@ using is_move_iterator_t = is_move_iterator<Iterator>::type;
  */
 
 template <typename T, typename Allocator = std::allocator<T>>
-struct soa_split_buffer {
+struct split_buffer {
   using value_type = T;
   using size_type = std::size_t;
   using reference = T &;
@@ -69,7 +69,6 @@ struct soa_split_buffer {
       bool operator==(const T &value) const;
   };
   */
-
 
   consteval {
     auto data_members = std::define_static_array(get_all_fields(^^T));
@@ -530,7 +529,7 @@ struct soa_split_buffer {
         // We ran out of back spare while reading the input stream.
         size_t old_capacity = capacity();
         size_t new_capacity = std::max({2 * old_capacity, 8uz});
-        soa_split_buffer new_buf(new_capacity, 0);
+        split_buffer new_buf(new_capacity, 0);
 
         auto dest_iter = new_buf.begin();
         auto src_iter = begin();
@@ -564,7 +563,7 @@ struct soa_split_buffer {
       } else {
         size_t old_capacity = capacity();
         size_t new_capacity = std::max({2 * old_capacity, 8uz});
-        soa_split_buffer new_buf(new_capacity, new_capacity / 4);
+        split_buffer new_buf(new_capacity, new_capacity / 4);
         auto dest_iter = new_buf.begin();
         auto src_iter = begin();
         // If the relocation throws mid-way, it guarantees that
@@ -589,7 +588,7 @@ struct soa_split_buffer {
    * @param lhs
    * @param rhs
    */
-  friend void swap(soa_split_buffer &lhs, soa_split_buffer &rhs) noexcept {
+  friend void swap(split_buffer &lhs, split_buffer &rhs) noexcept {
     using std::swap;
     swap(lhs.raw_memory_, rhs.raw_memory_);
     swap(lhs.pointers_, rhs.pointers_);
@@ -671,13 +670,13 @@ struct soa_split_buffer {
   /**
    * @brief Default constructor.
    */
-  constexpr soa_split_buffer() = default;
+  constexpr split_buffer() = default;
 
   /**
    * @brief Constructor that accepts a capacity and begin_offset.
    *
    */
-  constexpr soa_split_buffer(size_type capacity, size_type begin_offset) {
+  constexpr split_buffer(size_type capacity, size_type begin_offset) {
     ASSERT_ARGUMENT_WITHIN_DOMAIN(capacity > 0,
                                   "The capacity must be greater than 0");
     ASSERT_ARGUMENT_WITHIN_DOMAIN(
@@ -692,7 +691,7 @@ struct soa_split_buffer {
    * @brief Destroy the split buffer object
    *
    */
-  constexpr ~soa_split_buffer() {
+  constexpr ~split_buffer() {
     clear();
     if (raw_memory_) {
       deallocate_memory();
