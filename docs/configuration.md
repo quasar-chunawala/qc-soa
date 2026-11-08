@@ -1,6 +1,4 @@
-# Configuration Macros
-
-## Contracts
+# Contracts
 
 A contract is a formal interface specification for a software component such as a class or member-function. It is a set of conditions that express expectations on how the component interoperates with other components of the program.
 
@@ -16,7 +14,9 @@ A class invariant is a condition that a class type maintains throughout the life
 
 libsoa provides several hardening modes, where each mode enables a set of assertions that prevent UB caused by contract violations of the library. Different hardening modes make different tradeoffs between checking and runtime performance.
 
-If the user does not configure the hardening level, default to `HARDENING_MODE_NONE`
+If the user does not configure the hardening level, default to `HARDENING_MODE_NONE`.
+
+# Configuration Macros
 
 ## Hardening and Contract Checks
 
