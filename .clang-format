@@ -6,7 +6,7 @@ AlignOperands: true
 AlignTrailingComments: Always
 Standard: Latest
 TabWidth: 4
-UseTab: ForIndentation
+UseTab: Never
 IndentWidth: 4
 IndentPPDirectives: BeforeHash
 PPIndentWidth: 4
@@ -16,7 +16,6 @@ IndentCaseBlocks: true
 IndentCaseLabels: true
 IndentRequiresClause: false
 NamespaceIndentation: All
-Language: Cpp
 SortIncludes: CaseSensitive
 SpaceAfterTemplateKeyword: true
 ColumnLimit: 120

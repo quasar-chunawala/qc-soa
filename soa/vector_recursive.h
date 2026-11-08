@@ -60,5 +60,5 @@ static inline constexpr skip_flatten_t skip_flatten{};
 
 namespace soa {
 
-	template <typename T, typename Alloc = std::allocator<T>> class soa_vector_recursive {};
+    template <typename T, typename Alloc = std::allocator<T>> class soa_vector_recursive {};
 }; // namespace soa
