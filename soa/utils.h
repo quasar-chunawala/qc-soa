@@ -87,7 +87,7 @@ template <typename T> consteval auto member_layouts_of() {
   constexpr auto members = define_static_array(get_all_fields(^^T));
   static constexpr size_t num_members = members.size();
   std::array<member_layout, num_members> layouts{};
-  template for (constexpr size_t I : std::views::iota(0ul, num_members)) {
+  template for (constexpr size_t I : std::views::iota(0uz, num_members)) {
     layouts[I].size = size_of(type_of(members[I]));
     layouts[I].alignment = alignment_of(type_of(members[I]));
   }
@@ -109,7 +109,7 @@ constexpr auto calculate_member_offsets(std::size_t capacity) {
 
   std::array<member_offset, num_members> member_offsets{};
   size_t allocation_offset{0};
-  template for (constexpr auto I : std::views::iota(0ul, num_members)) {
+  template for (constexpr auto I : std::views::iota(0uz, num_members)) {
     size_t align_requirement = layouts[I].alignment;
     constexpr auto calculate_allocation_offset_func_reflection =
         substitute(^^calculate_allocation_offset, {

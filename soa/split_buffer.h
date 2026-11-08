@@ -100,7 +100,7 @@ struct soa_split_buffer {
 
     References &operator=(const T &value) {
       template for (constexpr size_t I :
-                    std::views::iota(0ul, members.size())) {
+                    std::views::iota(0uz, members.size())) {
         this->[:ref_members[I]:] = value.[:members[I]:];
       }
       return *this;
@@ -118,7 +118,7 @@ struct soa_split_buffer {
     bool operator==(const T &value) const {
       bool isEqual{true};
       template for (constexpr size_t I :
-                    std::views::iota(0ul, members.size())) {
+                    std::views::iota(0uz, members.size())) {
         isEqual &= (this->[:ref_members[I]:] == value.[:members[I]:]);
       }
       return isEqual;
@@ -127,7 +127,7 @@ struct soa_split_buffer {
     bool operator==(References other) const {
       bool isEqual{true};
       template for (constexpr size_t I :
-                    std::views::iota(0ul, members.size())) {
+                    std::views::iota(0uz, members.size())) {
         isEqual &= (this->[:ref_members[I]:] == other.[:ref_members[I]:]);
       }
       return isEqual;
@@ -529,7 +529,7 @@ struct soa_split_buffer {
       if (!back_spare()) {
         // We ran out of back spare while reading the input stream.
         size_t old_capacity = capacity();
-        size_t new_capacity = std::max({2 * old_capacity, 8ul});
+        size_t new_capacity = std::max({2 * old_capacity, 8uz});
         soa_split_buffer new_buf(new_capacity, 0);
 
         auto dest_iter = new_buf.begin();
@@ -563,7 +563,7 @@ struct soa_split_buffer {
         set_valid_range(begin() - diff, end() - diff);
       } else {
         size_t old_capacity = capacity();
-        size_t new_capacity = std::max({2 * old_capacity, 8ul});
+        size_t new_capacity = std::max({2 * old_capacity, 8uz});
         soa_split_buffer new_buf(new_capacity, new_capacity / 4);
         auto dest_iter = new_buf.begin();
         auto src_iter = begin();
