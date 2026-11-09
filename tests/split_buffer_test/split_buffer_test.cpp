@@ -174,3 +174,21 @@ TEST(SoaSplitBufferTest, EmplaceBackTest) {
     EXPECT_EQ(split_buf.size(), 1);
     EXPECT_EQ(split_buf[0], Vec3(1.0, -1.0, 1.0));
 }
+
+TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareCapacityTest) {
+    soa::detail::split_buffer<Vec3> split_buf(5, 4);
+    EXPECT_EQ(split_buf.size(), 0);
+    EXPECT_EQ(split_buf.capacity(), 5);
+    EXPECT_EQ(split_buf.back_spare(), 1);
+
+    Vec3 v = Vec3{.x_ = dist(gen), .y_ = dist(gen), .z_ = dist(gen)};
+    split_buf.copy_construct_at_end_with_size(1, v);
+    EXPECT_EQ(split_buf.size(), 1);
+    EXPECT_EQ(split_buf.back_spare(), 0);
+    EXPECT_EQ(split_buf.front_spare(), 4);
+
+    split_buf.emplace_back(1.0, -1.0, 1.0);
+    EXPECT_EQ(split_buf.size(), 2);
+    EXPECT_EQ(split_buf[0], v);
+    EXPECT_EQ(split_buf[1], Vec3(1.0, -1.0, 1.0));
+}
