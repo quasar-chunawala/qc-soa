@@ -69,7 +69,8 @@ namespace soa::detail {
         template <typename... ConstructorArgs>
         SOAVecElementConstructionTransaction(std::tuple<std::remove_cvref_t<ConstructorArgs> *...> ptrs,
                                              const Allocator &allocator, ConstructorArgs &&...args)
-            : args_{std::forward_as_tuple(args...)}, ptrs_{ptrs}, allocator_{allocator} {}
+            : args_(std::forward_as_tuple(std::forward<ConstructorArgs>(args)...)), ptrs_{ptrs}, allocator_{allocator} {
+        }
 
         constexpr void destroy() {
             return [&]<size_t... Indices>(std::index_sequence<Indices...>) {

@@ -56,8 +56,11 @@ namespace soa::detail {
         using pointer = T *;
 
         struct Pointers;
+        struct ConstPointers;
         struct ReferencesBase;
+        struct ConstReferencesBase;
         struct References;
+        struct ConstReferences;
 
         /*
         struct References : ReferencesBase {
@@ -73,15 +76,26 @@ namespace soa::detail {
                                              return data_member_spec(add_pointer(type_of(member)),
                                                                      {.name = identifier_of(member)});
                                          }));
+            define_aggregate(^^ConstPointers, data_members | std::views::transform([](std::meta::info member) {
+                                                  return data_member_spec(add_pointer(add_const(type_of(member))),
+                                                                          {.name = identifier_of(member)});
+                                              }));
             define_aggregate(^^ReferencesBase, data_members | std::views::transform([](std::meta::info member) {
                                                    return data_member_spec(add_lvalue_reference(type_of(member)),
                                                                            {.name = identifier_of(member)});
                                                }));
+            define_aggregate(^^ConstReferencesBase,
+                             data_members | std::views::transform([](std::meta::info member) {
+                                 return data_member_spec(add_lvalue_reference(add_const(type_of(member))),
+                                                         {.name = identifier_of(member)});
+                             }));
         }
 
         static constexpr auto ptr_members = define_static_array(get_all_fields(^^Pointers));
+        static constexpr auto const_ptr_members = define_static_array(get_all_fields(^^ConstPointers));
         static constexpr auto members = define_static_array(get_all_fields(^^T));
         static constexpr auto ref_members = define_static_array(get_all_fields(^^ReferencesBase));
+        static constexpr auto const_ref_members = define_static_array(get_all_fields(^^ConstReferencesBase));
 
         struct References : ReferencesBase {
 
@@ -120,6 +134,42 @@ namespace soa::detail {
             }
         };
 
+        struct ConstReferences : ConstReferencesBase {
+
+            template <typename... Args> ConstReferences(Args &...args) : ConstReferencesBase{args...} {}
+
+            ConstReferences(const References& other){
+                template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
+                    this->[:const_ref_members[I]:] == other.[:ref_members[I]:];
+                }
+            }
+
+            ConstReferences *operator->() { return this; }
+
+            /**
+             * @brief Comparison operator
+             *
+             * @param value
+             * @return true
+             * @return false
+             */
+            bool operator==(const T &value) const {
+                bool isEqual{true};
+                template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
+                    isEqual &= (this->[:const_ref_members[I]:] == value.[:members[I]:]);
+                }
+                return isEqual;
+            }
+
+            bool operator==(ConstReferences other) const {
+                bool isEqual{true};
+                template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
+                    isEqual &= (this->[:const_ref_members[I]:] == other.[:const_ref_members[I]:]);
+                }
+                return isEqual;
+            }
+        };
+
         /**
          * @brief StorageBlock type is used by the allocate_memory functions as a unit
          * memory allocation.
@@ -145,125 +195,147 @@ namespace soa::detail {
                                                            members | std::views::transform(std::meta::type_of) |
                                                                std::views::transform(std::meta::add_lvalue_reference) |
                                                                std::ranges::to<std::vector>()):];
-
-        struct iterator {
+        template <bool IsConst> struct basic_iterator {
+            using ptrs_t = std::conditional_t<IsConst, ConstPointers, Pointers>;
+            using ref_t = std::conditional_t<IsConst, ConstReferences, References>;
             using iterator_category = std::contiguous_iterator_tag;
-            using iterator_type = Pointers;
-            using value_type = References;
-            using pointer = Pointers;
+            using iterator_type = ptrs_t;
+            using value_type = ref_t;
+            using pointer = ptrs_t;
             using difference_type = std::ptrdiff_t;
 
-            constexpr iterator operator++() {
+            constexpr basic_iterator operator++() {
                 auto [... ptrs] = ptrs_;
-                ptrs_ = Pointers{(ptrs + 1)...};
+                ptrs_ = ptrs_t{(ptrs + 1)...};
                 return *this;
             }
 
-            constexpr iterator operator++(int) {
-                iterator temp = *this;
+            constexpr basic_iterator operator++(int) {
+                basic_iterator temp = *this;
                 ++(*this);
                 return temp;
             }
 
-            constexpr iterator operator--() {
+            constexpr basic_iterator operator--() {
                 auto [... ptrs] = ptrs_;
-                ptrs_ = Pointers{(ptrs - 1)...};
+                ptrs_ = ptrs_t{(ptrs - 1)...};
                 return *this;
             }
 
-            constexpr iterator operator--(int) {
-                iterator temp = *this;
+            constexpr basic_iterator operator--(int) {
+                basic_iterator temp = *this;
                 --(*this);
                 return temp;
             }
 
-            constexpr iterator operator+(std::ptrdiff_t n) {
+            constexpr basic_iterator operator+(std::ptrdiff_t n) {
                 auto [... ptrs] = ptrs_;
-                return iterator(Pointers{(ptrs + n)...});
+                return basic_iterator(ptrs_t{(ptrs + n)...});
             }
 
-            constexpr iterator &operator+=(std::ptrdiff_t n) {
+            constexpr basic_iterator &operator+=(std::ptrdiff_t n) {
                 auto [... ptrs] = ptrs_;
-                *this = iterator(Pointers{(ptrs + n)...});
+                *this = basic_iterator(ptrs_t{(ptrs + n)...});
                 return *this;
             }
 
-            constexpr iterator operator-(std::ptrdiff_t n) {
+            constexpr basic_iterator operator-(std::ptrdiff_t n) {
                 auto [... ptrs] = ptrs_;
                 // auto [... result_ptrs] = ((ptrs - n), ...);
-                return iterator(Pointers{(ptrs - n)...});
+                return basic_iterator(ptrs_t{(ptrs - n)...});
             }
 
-            constexpr iterator &operator-=(std::ptrdiff_t n) {
+            constexpr basic_iterator &operator-=(std::ptrdiff_t n) {
                 auto [... ptrs] = ptrs_;
-                *this = iterator(Pointers{(ptrs - n)...});
+                *this = basic_iterator(ptrs_t{(ptrs - n)...});
                 return *this;
             }
 
-            friend constexpr iterator operator+(std::ptrdiff_t n, const iterator &rhs) { return rhs + n; }
+            friend constexpr basic_iterator operator+(std::ptrdiff_t n, const basic_iterator &rhs) { return rhs + n; }
 
-            friend constexpr iterator operator-(std::ptrdiff_t n, const iterator &rhs) { return rhs - n; }
+            friend constexpr basic_iterator operator-(std::ptrdiff_t n, const basic_iterator &rhs) { return rhs - n; }
 
-            constexpr std::ptrdiff_t operator-(const iterator &rhs) {
+            constexpr std::ptrdiff_t operator-(const basic_iterator &rhs) {
                 auto [lhs_first, ... ptrs1] = ptrs_;
                 auto [rhs_first, ... ptrs2] = rhs.ptrs_;
                 return lhs_first - rhs_first;
             }
 
-            constexpr References operator*() {
+            constexpr ref_t operator*() {
                 auto [... ptrs] = ptrs_;
-                return References{(*ptrs)...};
+                return ref_t{(*ptrs)...};
             }
 
-            constexpr References operator[](std::size_t idx) { return References{*(this + idx)}; }
-
-            constexpr References *operator->() {
+            constexpr const ref_t operator*() const {
                 auto [... ptrs] = ptrs_;
-                References ref = References((*ptrs)...);
+                return ref_t{(*ptrs)...};
+            }
+
+            constexpr ref_t operator[](std::size_t idx) { return ref_t{*(*this + idx)}; }
+
+            constexpr const ref_t operator[](std::size_t idx) const { return ref_t{*(*this + idx)}; }
+
+            constexpr ref_t *operator->() {
+                auto [... ptrs] = ptrs_;
+                ref_t ref = ref_t((*ptrs)...);
                 return ref;
             }
 
-            constexpr iterator operator=(iterator &rhs) {
-                ptrs_ = rhs.ptrs_;
-                return *this;
+            constexpr const ref_t *operator->() const {
+                auto [... ptrs] = ptrs_;
+                ref_t ref = ref_t((*ptrs)...);
+                return ref;
             }
 
-            constexpr bool operator==(const iterator &rhs) const {
+            constexpr bool operator==(const basic_iterator &rhs) const {
                 auto [... lhs_ptrs] = ptrs_;
                 auto [... rhs_ptrs] = rhs.ptrs_;
                 return ((lhs_ptrs == rhs_ptrs) && ...);
             }
 
-            constexpr friend bool operator<(const iterator &lhs, const iterator &rhs) {
+            constexpr friend bool operator<(const basic_iterator &lhs, const basic_iterator &rhs){
                 auto [... lhs_ptrs] = lhs.ptrs_;
                 auto [... rhs_ptrs] = rhs.ptrs_;
                 return ((lhs_ptrs < rhs_ptrs) && ...);
             }
 
-            constexpr friend bool operator>(const iterator &lhs, const iterator &rhs) {
+            constexpr friend bool operator>(const basic_iterator &lhs, const basic_iterator &rhs){
                 auto [... lhs_ptrs] = lhs.ptrs_;
                 auto [... rhs_ptrs] = rhs.ptrs_;
                 return ((lhs_ptrs > rhs_ptrs) && ...);
             }
 
-            constexpr friend bool operator>=(const iterator &lhs, const iterator &rhs) {
+            constexpr friend bool operator>=(const basic_iterator &lhs, const basic_iterator &rhs){
                 return lhs > rhs || lhs == rhs;
             }
 
-            constexpr friend bool operator<=(const iterator &lhs, const iterator &rhs) {
+            constexpr friend bool operator<=(const basic_iterator &lhs, const basic_iterator &rhs){
                 return lhs < rhs || lhs == rhs;
             }
 
-            Pointers ptrs_;
+            ptrs_t ptrs_;
         };
+
+        using iterator = basic_iterator<false>;
+        using const_iterator = basic_iterator<true>;
 
         constexpr iterator begin() {
             iterator front_cap(pointers_);
             return front_cap + begin_offset_;
         }
 
+        constexpr const_iterator begin() const {
+            const_iterator front_cap(pointers_);
+            return front_cap + begin_offset_;
+        }
+
         constexpr iterator end() {
             iterator front_cap(pointers_);
+            return front_cap + begin_offset_ + size_;
+        }
+
+        constexpr const_iterator end() const {
+            const_iterator front_cap(pointers_);
             return front_cap + begin_offset_ + size_;
         }
 
@@ -274,10 +346,24 @@ namespace soa::detail {
             return std::span(front_cap_ptr + begin_offset_, size_);
         }
 
+        template <typename FieldType> constexpr auto get_field_span() const {
+            auto [... ptrs] = pointers_;
+            auto tuple_pointers = std::make_tuple(ptrs...);
+            const FieldType *front_cap_ptr = std::get<FieldType>(tuple_pointers);
+            return std::span(front_cap_ptr + begin_offset_, size_);
+        }
+
         template <std::size_t N> constexpr auto get_field_span() {
             auto [... ptrs] = pointers_;
             auto tuple_pointers = std::make_tuple(ptrs...);
             auto *front_cap_ptr = std::get<N>(tuple_pointers);
+            return std::span(front_cap_ptr + begin_offset_, size_);
+        }
+
+        template <std::size_t N> constexpr auto get_field_span() const {
+            auto [... ptrs] = pointers_;
+            auto tuple_pointers = std::make_tuple(ptrs...);
+            const auto *front_cap_ptr = std::get<N>(tuple_pointers);
             return std::span(front_cap_ptr + begin_offset_, size_);
         }
 
@@ -300,9 +386,18 @@ namespace soa::detail {
             return References(*(ptr + begin_offset_)...);
         }
 
+        constexpr ConstReferences front() const {
+            auto [... ptr] = pointers_;
+            return ConstReferences(*(ptr + begin_offset_)...);
+        }
         constexpr References back() {
             auto [... ptr] = pointers_;
             return References(*(ptr + begin_offset_ + size_)...);
+        }
+
+        constexpr ConstReferences back() const {
+            auto [... ptr] = pointers_;
+            return ConstReferences(*(ptr + begin_offset_ + size_)...);
         }
 
         [[nodiscard]] constexpr std::size_t get_sentinel() const { return size_; }
@@ -356,51 +451,9 @@ namespace soa::detail {
 
         template <typename... MemberTypes>
         constexpr void construct_at_helper(auto tuple_ptrs, MemberTypes &&...member_values) {
-            SOAVecElementConstructionTransaction<Allocator, decltype(member_values)...> elementTxn(
+            SOAVecElementConstructionTransaction<Allocator, MemberTypes &&...> elementTxn(
                 tuple_ptrs, alloc_, std::forward<MemberTypes>(member_values)...);
             elementTxn.construct();
-        }
-
-        /**
-         * @brief Copy constructs the element *src_iter at dest_iter.
-         *        Selected when *src_iter is not an rvalue reference.
-         */
-        template <typename SourceIterator>
-        constexpr void construct_at_unchecked(iterator dest_iter, SourceIterator src_iter) {
-            auto [... member_ptrs] = dest_iter.ptrs_;
-            auto &[... member_values] = *src_iter;
-            // RAII guard that provides that offers strong exception safety, when
-            // constructing a single T element, in the member declaration order.
-            construct_at_helper(std::tuple(member_ptrs...), member_values...);
-        }
-
-        /**
-         * @brief Move constructs the element *src_iter at dest_iter.
-         *        Selected when *src_iter is an rvalue reference, e.g. for
-         * std::move_iterator.
-         */
-        template <typename SourceIterator>
-        requires std::is_same_v<is_move_iterator_t<SourceIterator>, std::true_type>
-        constexpr void construct_at_unchecked(iterator dest_iter, SourceIterator src_iter) {
-            auto [... member_ptrs] = dest_iter.ptrs_;
-            // *src_iter is an xvalue, so we need auto&& here: auto& cannot bind to it.
-            auto &&[... member_values] = *src_iter;
-            // Structured bindings are lvalues even when bound to an rvalue, so each
-            // member must be explicitly moved.
-            construct_at_helper(std::tuple(member_ptrs...), std::move(member_values)...);
-        }
-
-        constexpr void copy_construct_at_unchecked(iterator dest_iter, const_reference src_value) {
-            auto [... member_ptrs] = dest_iter.ptrs_;
-            auto &[... member_values] = src_value;
-            // RAII guard that provides that offers strong exception safety, when
-            // constructing a single T element, in the member declaration order.
-            construct_at_helper(std::tuple(member_ptrs...), member_values...);
-        }
-
-        template <typename... Args> constexpr void emplace_at_unchecked(iterator dest_iter, Args &&...args) {
-            auto [... member_ptrs] = dest_iter.ptrs_;
-            construct_at_helper(std::tuple(member_ptrs...), std::forward<Args>(args)...);
         }
 
         /**
@@ -447,7 +500,7 @@ namespace soa::detail {
             ConstructionTransaction txn(this, end(), std::distance(first, last));
             auto src_iter{first};
             for (; txn.pos_ != txn.end_; ++txn.pos_, ++src_iter) {
-                construct_at_unchecked(txn.pos_, src_iter);
+                construct_at_unchecked_helper(txn.pos_, src_iter);
             }
             set_size(size_ + std::distance(first, last));
         }
@@ -485,7 +538,7 @@ namespace soa::detail {
                     // automatically clear its elements upon destruction.
                     size_t new_buf_size{0};
                     for (; src_iter != end(); ++src_iter, ++dest_iter) {
-                        construct_at_unchecked(dest_iter, std::move_iterator<InputIterator>(src_iter));
+                        construct_at_unchecked_helper(dest_iter, std::move_iterator<InputIterator>(src_iter));
                         new_buf.set_sentinel(++new_buf_size);
                     }
                     swap(*this, new_buf);
@@ -502,7 +555,7 @@ namespace soa::detail {
                     size_t diff = front_spare();
                     diff = (diff + 1) / 2;
                     for (iterator it{begin()}; it != end(); ++it) {
-                        construct_at_unchecked(it - diff, std::move_iterator(it));
+                        construct_at_unchecked_helper(it - diff, std::move_iterator(it));
                     }
                     set_valid_range(begin() - diff, end() - diff);
                 } else {
@@ -517,7 +570,7 @@ namespace soa::detail {
                     // automatically clear its elements upon destruction.
                     size_t new_buf_size{0};
                     for (; src_iter != end(); ++src_iter, ++dest_iter) {
-                        construct_at_unchecked(dest_iter, std::move_iterator(src_iter));
+                        construct_at_unchecked_helper(dest_iter, std::move_iterator(src_iter));
                         new_buf.set_sentinel(++new_buf_size);
                     }
                     swap(*this, new_buf);
@@ -634,6 +687,72 @@ namespace soa::detail {
                 deallocate_memory();
                 raw_memory_ = nullptr;
             }
+        }
+
+    private:
+        /**
+         * @brief Copy constructs the element *src_iter at dest_iter.
+         *        Selected when *src_iter is not an rvalue reference.
+         */
+        template <typename SourceIterator>
+        constexpr void construct_at_unchecked_helper(iterator dest_iter, SourceIterator src_iter) {
+            auto [... member_ptrs] = dest_iter.ptrs_;
+            auto &[... member_values] = *src_iter;
+            // RAII guard that provides that offers strong exception safety, when
+            // constructing a single T element, in the member declaration order.
+            construct_at_helper(std::tuple(member_ptrs...), member_values...);
+        }
+
+        /**
+         * @brief Move constructs the element *src_iter at dest_iter.
+         *        Selected when *src_iter is an rvalue reference, e.g. for
+         * std::move_iterator.
+         */
+        template <typename SourceIterator>
+        requires std::is_same_v<is_move_iterator_t<SourceIterator>, std::true_type>
+        constexpr void construct_at_unchecked_helper(iterator dest_iter, SourceIterator src_iter) {
+            auto [... member_ptrs] = dest_iter.ptrs_;
+            // *src_iter is an xvalue, so we need auto&& here: auto& cannot bind to it.
+            auto &&[... member_values] = *src_iter;
+            // Structured bindings are lvalues even when bound to an rvalue, so each
+            // member must be explicitly moved.
+            construct_at_helper(std::tuple(member_ptrs...), std::move(member_values)...);
+        }
+
+        /**
+         * @brief This method is copy consructs T at the address specified by `dest_iter`.
+         * @tparam ValueType
+         * @param dest_iter
+         * @param src_value
+         */
+        constexpr void copy_construct_at_unchecked(iterator dest_iter, const_reference src_value) {
+            auto [... member_ptrs] = dest_iter.ptrs_;
+            auto &[... member_values] = src_value;
+            construct_at_helper(std::tuple(member_ptrs...), member_values...);
+        }
+
+        /**
+         * @brief This method is move consructs T at the address specified by `dest_iter`.
+         * @tparam ValueType
+         * @param dest_iter
+         * @param src_value
+         */
+        constexpr void move_construct_at_unchecked(iterator dest_iter, T &&src_value) {
+            auto [... member_ptrs] = dest_iter.ptrs_;
+            auto &[... member_values] = src_value;
+            construct_at_helper(std::tuple(member_ptrs...), std::move(member_values)...);
+        }
+
+        /**
+         * @brief This method is constructs T in place at the address specified by `dest_iter` using constructor args.
+         *
+         * @tparam Args
+         * @param dest_iter
+         * @param args
+         */
+        template <typename... Args> constexpr void emplace_at_unchecked(iterator dest_iter, Args &&...args) {
+            auto [... member_ptrs] = dest_iter.ptrs_;
+            construct_at_helper(std::tuple(member_ptrs...), std::forward<Args>(args)...);
         }
     };
 } // namespace soa::detail

@@ -165,10 +165,12 @@ TEST(SoaSplitBufferTest, ConstructAtEndFromRangeTest) {
     }
 }
 
-TEST(SoaSplitBufferTest, CopyConstructAtEndFromPointerToT) {
+TEST(SoaSplitBufferTest, EmplaceBackTest) {
     soa::detail::split_buffer<Vec3> split_buf(1000, 250);
     EXPECT_EQ(split_buf.size(), 0);
     EXPECT_EQ(split_buf.capacity(), 1000);
 
-    Vec3 point;
+    split_buf.emplace_back(1.0, -1.0, 1.0);
+    EXPECT_EQ(split_buf.size(), 1);
+    EXPECT_EQ(split_buf[0], Vec3(1.0, -1.0, 1.0));
 }
