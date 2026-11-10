@@ -165,7 +165,11 @@ TEST(SoaSplitBufferTest, ConstructAtEndFromRangeTest) {
     }
 }
 
-TEST(SoaSplitBufferTest, EmplaceBackTest) {
+/**
+ * @brief A deterministic test for emplace_back(Args&&) where the container has both
+ * front and back spare capacity.
+ */
+TEST(SoaSplitBufferTest, EmplaceBackWitHFrontAndBackSpareTest) {
     soa::detail::split_buffer<Vec3> split_buf(1000, 250);
     EXPECT_EQ(split_buf.size(), 0);
     EXPECT_EQ(split_buf.capacity(), 1000);
@@ -175,6 +179,10 @@ TEST(SoaSplitBufferTest, EmplaceBackTest) {
     EXPECT_EQ(split_buf[0], Vec3(1.0, -1.0, 1.0));
 }
 
+/**
+ * @brief A deterministic test for emplace_back(Args&&) where the container has no back spare
+ * spare capacity.
+ */
 TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareCapacityTest) {
     soa::detail::split_buffer<Vec3> split_buf(5, 4);
     EXPECT_EQ(split_buf.size(), 0);
@@ -191,4 +199,25 @@ TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareCapacityTest) {
     EXPECT_EQ(split_buf.size(), 2);
     EXPECT_EQ(split_buf[0], v);
     EXPECT_EQ(split_buf[1], Vec3(1.0, -1.0, 1.0));
+}
+
+TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityTest) {
+    soa::detail::split_buffer<Vec3> split_buf;
+    EXPECT_EQ(split_buf.size(), 0);
+    EXPECT_EQ(split_buf.capacity(), 0);
+
+    std::vector<Vec3> vec;
+    for (auto i{0uz}; i < 10; ++i) {
+        vec.push_back(Vec3(dist(gen), dist(gen), dist(gen)));
+    }
+
+    for (auto i{0uz}; i < 10; ++i) {
+        split_buf.emplace_back(vec[i].x_, vec[i].y_, vec[i].z_);
+    }
+
+    for (auto i{0uz}; i < 10; ++i) {
+        EXPECT_EQ(split_buf[i], vec[i]);
+    }
+
+    EXPECT_EQ(split_buf.size(), 10);
 }
