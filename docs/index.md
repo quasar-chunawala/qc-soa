@@ -21,6 +21,10 @@ In practice, however, an algorithm with prettier Big-$O$ can lose to a simpler l
 
 Modern CPUs are extremely fast at data already in registers or nearby cache. 
 
+Usually, when we are writing something like `a += b`; it is a register-register (R-R) operation, so the data has to go from the registers to the ALU and back. However, all modern 64-bit CPUs are actually pipelined, so by the time the ALU actually needs this information, it is altready at the CPU entrance, so we can avoid the latency penalty of going from registers to ALU and back. 
+
+If we need to access information outside of the CPU registers - the CPU has to go to the memory. It goes to the L1D(Data) cache first; reading from L1D cache usually takes $~3$ clock cycles.
+
 Particles are at the heart of many astrophysical, environmental and industrial phenomena ranging from dynamics of galaxies, sandstorms, to combustion in diesel engines. $N$-body simulations in cosmology, turbulence problems in hydrodynamics etc. require numerical integration of the underlying equations of motion over many time-steps. Similarly, in a game-engine, imagine a scene where a rocket flies through the air, leaving behind a smoke trail. Suddenly, the rocket explodes leaving sparks flying everywhere. A `Particle` system, is common to all these problems. 
 
 ```cpp
