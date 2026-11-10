@@ -13,9 +13,21 @@ hide:
 
 ## Introduction
 
-On paper, a $O(1)$ algorithm runs faster than a $O(n)$ algorithm. Even if you ran the $O(n)$ algorithm on a super-computer and the $O(1)$ algorithm on a digital watch, we have a guarantee that the $O(1)$ algorithm beats the $O(n)$ algorithm. It is independent of hardware constants. 
+On paper, a $O(1)$ algorithm runs faster than a $O(n)$ algorithm. Even if you ran the $O(n)$ algorithm on a super-computer and the $O(1)$ algorithm on a digital watch, we have a theoretical guarantee that the $O(1)$ algorithm beats the $O(n)$ algorithm. Everybody loves a guarantee! It is independent of hardware constants. 
 
 In practice, however, an algorithm with prettier Big-$O$ can lose to a simpler layout if it pointer chases through cold memory. 
+
+In earlier days, computers were much simpler. The various components of a system, such as the CPU, memory, mass storage, and network interfaces, were developed together and as a result, were quite balanced in performance. For example, memory and network interfaces were not much faster than the CPU at providing data.
+
+This situation changed once the basic structure of computers stabilized and hardware developers started concentrating on optimizing individual subsystems. Suddenly, the performance of some components of the computer fell significantly behind and bottlenecks were developed. 
+
+## SRAM versus DRAM
+
+The static qualifier differentiates SRAM from DRAM(Dynamic Random Access Memory). In the presence of constant power, an SRAM cell maintains its state (`0` or `1`). But it is more expensive in terms of silicon area and cost. Typically, SRAM is used for the  internal registers and the cache memory of a CPU, while DRAM is used for a computer's main memory.
+
+Dynamic RAM is in its structure, much simpler than static RAM. All it consists of is one transistor and one capacitor. 
+
+A dynamic RAM cell keeps its state in the capacitor $C$. The transistor $M$ is used to guard access to the state. 
 
 ## Cache behavior is often more important than Big-$O$ notation
 
@@ -23,7 +35,7 @@ Modern CPUs are extremely fast at data already in registers or nearby cache.
 
 Usually, when we are writing something like `a += b`; it is a register-register (R-R) operation, so the data has to go from the registers to the ALU and back. However, all modern 64-bit CPUs are actually pipelined, so by the time the ALU actually needs this information, it is altready at the CPU entrance, so we can avoid the latency penalty of going from registers to ALU and back. 
 
-If we need to access information outside of the CPU registers - the CPU has to go to the memory. It goes to the L1D(Data) cache first; reading from L1D cache usually takes $~3$ clock cycles.
+If we need to access information outside of the CPU registers - the CPU has to go to the memory. It goes to the L1D(Data) cache first; reading from L1D cache usually takes $\approx 3$ clock cycles. 
 
 Particles are at the heart of many astrophysical, environmental and industrial phenomena ranging from dynamics of galaxies, sandstorms, to combustion in diesel engines. $N$-body simulations in cosmology, turbulence problems in hydrodynamics etc. require numerical integration of the underlying equations of motion over many time-steps. Similarly, in a game-engine, imagine a scene where a rocket flies through the air, leaving behind a smoke trail. Suddenly, the rocket explodes leaving sparks flying everywhere. A `Particle` system, is common to all these problems. 
 
