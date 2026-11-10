@@ -11,15 +11,17 @@ hide:
 
 `libsoa` is modern C++ (C++26) library providing a full spectrum of SoA(Structure-Of-Arrays) data-structures.
 
-## Data Oriented Design Philosophy
+## Introduction
 
-According to Data-Oriented-Design(DoD) principles, *the purpose of all programs and all parts of those programs, is to transform data from one form to another*. If you don't understand the data, you don't understand the problem. 
+On paper, a $O(1)$ algorithm runs faster than a $O(n)$ algorithm. Even if you ran the $O(n)$ algorithm on a super-computer and the $O(1)$ algorithm on a digital watch, we have a guarantee that the $O(1)$ algorithm beats the $O(n)$ algorithm. It is independent of hardware constants. 
 
-Data oriented design is all about reorganizing your data-structures around for better performance. Andrew Kelley’s talk on the topic—especially his use of Zig’s `MultiArrayList` — offers a compelling real-world example.
+In practice, however, an algorithm with prettier Big-$O$ can lose to a simpler layout if it pointer chases through cold memory. 
 
-## Array-of-Structures(AoS)
+## Cache behavior is often more important than Big-$O$ notation
 
-In a game-engine, imagine a scene where a rocket flies through the air, leaving behind a smoke trail. Suddenly, the rocket explodes leaving sparks flying everywhere. Out of the disintegrating rocket, a creature is jettisoned towards you. What do most of these elements have in common? In terms of technology, such a scene in a game would benefit from a `Particle` system. A `Particle` system is typically defined as follows:
+Modern CPUs are extremely fast at data already in registers or nearby cache. 
+
+Particles are at the heart of many astrophysical, environmental and industrial phenomena ranging from dynamics of galaxies, sandstorms, to combustion in diesel engines. $N$-body simulations in cosmology, turbulence problems in hydrodynamics etc. require numerical integration of the underlying equations of motion over many time-steps. Similarly, in a game-engine, imagine a scene where a rocket flies through the air, leaving behind a smoke trail. Suddenly, the rocket explodes leaving sparks flying everywhere. A `Particle` system, is common to all these problems. 
 
 ```cpp
 // 64 bytes
@@ -30,8 +32,22 @@ struct Particle{
   uint32_t color_;  // 4 bytes, 4 bytes padding
 };
 
-std::vector<Particle> particles;
+std::vector<Particle> particleSystem;
 ```
+
+Many of these problems only scan one field such as `velocity_` over many `Particle` records. 
+
+In the financial markets, a participant often receives bid-ask quotes from an exchange. 
+
+```cpp
+struct Quotes {
+    std::array<std::int64_t, 1024> price_ticks;
+    std::array<std::int32_t, 1024> quantities;
+    std::array<std::uint32_t, 1024> venue_ids;
+};
+```
+
+A trading strategy may only scan one field `price_` to determine the best price. 
 
 The above is Array-of-Structs(AoS) layout. AoS layout keeps each complete `Particle` object contigous, which is convenient and can be efficient during iteration when a one pass needs the whole object. 
 
@@ -46,6 +62,14 @@ void update_positions(std::vector<Particle>& particles, float dt){
 ```
 
 Thus, the loop is wasteful. For particle systems, ECS components, and vertex processing, grouping the same fields across many objects can better match a hot loop’s access pattern.
+
+## Data Oriented Design Philosophy
+
+According to Data-Oriented-Design(DoD) principles, *the purpose of all programs and all parts of those programs, is to transform data from one form to another*. If you don't understand the data, you don't understand the problem. 
+
+Data oriented design is all about reorganizing your data-structures around for better performance. Andrew Kelley’s talk on the topic—especially his use of Zig’s `MultiArrayList` — offers a compelling real-world example.
+
+
 
 ## Structure-of-Arrays(SoA) approach
 
