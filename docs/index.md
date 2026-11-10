@@ -17,17 +17,19 @@ On paper, a $O(1)$ algorithm runs faster than a $O(n)$ algorithm. Even if you ra
 
 In practice, however, an algorithm with prettier Big-$O$ can lose to a simpler layout if it pointer chases through cold memory. 
 
+## Computer hardware today
+
 In earlier days, computers were much simpler. The various components of a system, such as the CPU, memory, mass storage, and network interfaces, were developed together and as a result, were quite balanced in performance. For example, memory and network interfaces were not much faster than the CPU at providing data.
 
 This situation changed once the basic structure of computers stabilized and hardware developers started concentrating on optimizing individual subsystems. Suddenly, the performance of some components of the computer fell significantly behind and bottlenecks were developed. 
 
-## SRAM versus DRAM
+### SRAM versus DRAM
 
 The static qualifier differentiates SRAM from DRAM(Dynamic Random Access Memory). In the presence of constant power, an SRAM cell maintains its state (`0` or `1`). But it is more expensive in terms of silicon area and cost. Typically, SRAM is used for the  internal registers and the cache memory of a CPU, while DRAM is used for a computer's main memory.
 
 Dynamic RAM is in its structure, much simpler than static RAM. All it consists of is one transistor and one capacitor. 
 
-A dynamic RAM cell keeps its state in the capacitor $C$. The transistor $M$ is used to guard access to the state. 
+A dynamic RAM cell keeps its state in the capacitor $\textbf{C}$. The transistor $\textbf{M}$ is used to guard access to the state. To read the state of the cell, the access line $\textbf{AL}$ is raised; this either causes a current to flow on the data line $\textbf{DL}$ or not, depending on the charge in the capacitor. 
 
 ## Cache behavior is often more important than Big-$O$ notation
 
