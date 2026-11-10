@@ -91,7 +91,7 @@ namespace soa::detail {
 
         constexpr void construct() {
             template for (constexpr int I : std::views::iota(0uz, sizeof...(Args))) {
-                construct_impl(std::get<I>(args_), std::get<I>(ptrs_));
+                construct_impl(std::forward<Args...[I]>(std::get<I>(args_)), std::get<I>(ptrs_));
             }
         };
     };
