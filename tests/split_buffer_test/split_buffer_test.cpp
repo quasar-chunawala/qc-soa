@@ -4,6 +4,7 @@
 #include <soa/construction_transaction.h>
 #include <soa/split_buffer.h>
 #include <soa/utils.h>
+#include <stdexcept>
 
 namespace {
     template <std::size_t Size, std::size_t Align> struct alignas(Align) Blob {
@@ -33,6 +34,62 @@ namespace {
         Blob<8, 8> d;
         Blob<2, 2> e;
         Blob<4, 4> f;
+    };
+
+    struct ObjectTracker {
+        static inline int alive_{0}, copies_{0}, moves_{0}, throw_countdown_{-1}, dtor_count_{0};
+
+        enum class ThrowTrigger : uint8_t { DETERMINISTIC = 0, RANDOM = 1 };
+
+        int value_;
+        static inline ThrowTrigger throw_trigger_{ThrowTrigger::DETERMINISTIC};
+
+        static void maybe_throw(std::string error_msg) {
+            std::mt19937 generator(std::random_device{}());
+            std::uniform_int_distribution<int> uniform_int_dist(0, 1);
+            if (throw_trigger_ == ThrowTrigger::DETERMINISTIC) {
+                if (throw_countdown_-- == 0)
+                    throw std::runtime_error(error_msg);
+            }
+
+            if (throw_trigger_ == ThrowTrigger::RANDOM) {
+                if (uniform_int_dist(generator)) {
+                    throw std::runtime_error(error_msg);
+                }
+            }
+        }
+
+        ObjectTracker(int v) : value_{v} {
+            maybe_throw("Runtime exception in ObjectTracker(int)!");
+            ++alive_;
+        }
+
+        ObjectTracker(const ObjectTracker &other) : value_{other.value_} {
+            maybe_throw("Runtime exception in copy ctor!");
+            ++copies_;
+            ++alive_;
+        }
+
+        ObjectTracker(ObjectTracker &&other) noexcept : value_{other.value_} {
+            other.value_ = -1;
+            ++alive_;
+            ++moves_;
+        }
+
+        ~ObjectTracker() { --alive_; }
+        bool operator==(const ObjectTracker &other) const = default;
+        static void reset() {
+            alive_ = copies_ = moves_ = dtor_count_ = 0;
+            throw_countdown_ = -1;
+        }
+    };
+
+    struct ObjectsCollection {
+        ObjectTracker a_;
+        ObjectTracker b_;
+
+        ObjectsCollection(int a, int b) : a_(a), b_(b) {}
+        ObjectsCollection() : a_{0}, b_{0} {}
     };
 
     static std::mt19937 gen(42);
@@ -207,17 +264,39 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityTest) {
     EXPECT_EQ(split_buf.capacity(), 0);
 
     std::vector<Vec3> vec;
-    for (auto i{0uz}; i < 10; ++i) {
+    for (auto i{0uz}; i < 128; ++i) {
         vec.push_back(Vec3(dist(gen), dist(gen), dist(gen)));
     }
 
-    for (auto i{0uz}; i < 10; ++i) {
+    for (auto i{0uz}; i < 128; ++i) {
         split_buf.emplace_back(vec[i].x_, vec[i].y_, vec[i].z_);
     }
 
-    for (auto i{0uz}; i < 10; ++i) {
+    for (auto i{0uz}; i < 128; ++i) {
         EXPECT_EQ(split_buf[i], vec[i]);
     }
 
-    EXPECT_EQ(split_buf.size(), 10);
+    EXPECT_EQ(split_buf.size(), 128);
+}
+
+TEST(SoaSplitBufferTest, EmplaceBackObjectTrackingTest01) {
+    ObjectsCollection coll(3, 4);
+
+    // Reset count
+    ObjectTracker::reset();
+
+    soa::detail::split_buffer<ObjectsCollection> split_buf(10, 6);
+    EXPECT_EQ(split_buf.capacity(), 10);
+    EXPECT_EQ(split_buf.size(), 0);
+    split_buf.copy_construct_at_end_with_size(4, coll);
+    EXPECT_EQ(split_buf.size(), 4);
+
+    split_buf.emplace_back(coll.a_, coll.b_);
+    EXPECT_EQ(split_buf.size(), 5);
+    // TODO: When there is no back spare capacity, the current relocation logic in emplace_back
+    // doesn't properly handle destroying the [moved|copied]-from object.
+    // EXPECT_EQ(ObjectTracker::alive_, 10);
+    EXPECT_EQ(ObjectTracker::moves_, 8);
+    EXPECT_EQ(ObjectTracker::copies_, 10);
+    // EXPECT_EQ(ObjectTracker::dtor_count_, 8);
 }

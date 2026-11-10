@@ -138,7 +138,7 @@ namespace soa::detail {
 
             template <typename... Args> ConstReferences(Args &...args) : ConstReferencesBase{args...} {}
 
-            ConstReferences(const References& other){
+            ConstReferences(const References &other) {
                 template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                     this->[:const_ref_members[I]:] == other.[:ref_members[I]:];
                 }
@@ -293,23 +293,23 @@ namespace soa::detail {
                 return ((lhs_ptrs == rhs_ptrs) && ...);
             }
 
-            constexpr friend bool operator<(const basic_iterator &lhs, const basic_iterator &rhs){
+            constexpr friend bool operator<(const basic_iterator &lhs, const basic_iterator &rhs) {
                 auto [... lhs_ptrs] = lhs.ptrs_;
                 auto [... rhs_ptrs] = rhs.ptrs_;
                 return ((lhs_ptrs < rhs_ptrs) && ...);
             }
 
-            constexpr friend bool operator>(const basic_iterator &lhs, const basic_iterator &rhs){
+            constexpr friend bool operator>(const basic_iterator &lhs, const basic_iterator &rhs) {
                 auto [... lhs_ptrs] = lhs.ptrs_;
                 auto [... rhs_ptrs] = rhs.ptrs_;
                 return ((lhs_ptrs > rhs_ptrs) && ...);
             }
 
-            constexpr friend bool operator>=(const basic_iterator &lhs, const basic_iterator &rhs){
+            constexpr friend bool operator>=(const basic_iterator &lhs, const basic_iterator &rhs) {
                 return lhs > rhs || lhs == rhs;
             }
 
-            constexpr friend bool operator<=(const basic_iterator &lhs, const basic_iterator &rhs){
+            constexpr friend bool operator<=(const basic_iterator &lhs, const basic_iterator &rhs) {
                 return lhs < rhs || lhs == rhs;
             }
 
@@ -554,6 +554,7 @@ namespace soa::detail {
                 if (front_spare() > 0) {
                     size_t diff = front_spare();
                     diff = (diff + 1) / 2;
+                    // Relocate [begin,end) to [begin-diff, end-diff)
                     for (iterator it{begin()}; it != end(); ++it) {
                         construct_at_unchecked_helper(it - diff, std::move_iterator(it));
                     }
