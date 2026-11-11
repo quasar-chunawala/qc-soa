@@ -157,5 +157,9 @@ The static qualifier differentiates SRAM from DRAM(Dynamic Random Access Memory)
 
 Dynamic RAM is in its structure, much simpler than static RAM. All it consists of is one transistor and one capacitor. 
 
-A dynamic RAM cell keeps its state in the capacitor $\textbf{C}$. The transistor $\textbf{M}$ is used to guard access to the state. To read the state of the cell, the access line $\textbf{AL}$ is raised; this either causes a current to flow on the data line $\textbf{DL}$ or not, depending on the charge in the capacitor. 
+A dynamic RAM cell keeps its state in the capacitor $\textbf{C}$. The transistor $\textbf{M}$ is used to guard access to the state. To read the state of the cell, the access line $\textbf{AL}$ is raised; this either causes a current to flow on the data line $\textbf{DL}$ or not, depending on the charge in the capacitor. To write to the cell, the data line $\mathbf{DL}$ is appropriately set and then $\mathbf{AL}$ is raised for a time long enough to charge or drain the capacitor. So, the transistor $\mathbf{M}$ acts as a gate. 
+
+There are a number of complications with this design of dynamic RAM. The use of a capacitor means that reading the cell discharges the capacitor. The procedure cannot be repeated indefinitely, and the capacitor must be recharged at some point. Even worse, to accomodate the huge number of cells(chips with $10^9$ cells are now common), the capacitance of the capacitor must be low (in femto-farad range or lower). It only takes a few seconds for the charge held in a capacitor to dissipate. This problem is called **leakage**. 
+
+The leakage is why a DRAM cell must be constantly refreshed. For most DRAM chips, this refresh must happen every 64ms. During the refresh cycle, no access to 
 
