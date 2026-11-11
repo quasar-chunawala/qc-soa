@@ -9,7 +9,7 @@ hide:
 [![MacOS build](https://github.com/quasar-chunawala/qc-soa/actions/workflows/macos.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-soa/actions/workflows/macos.yml)
 [![Win32/64 build](https://github.com/quasar-chunawala/qc-soa/actions/workflows/windows.yml/badge.svg?branch=main)](https://github.com/quasar-chunawala/qc-soa/actions/workflows/windows.yml)
 
-`libsoa` is a library of SoA(Structure-Of-Arrays) containers. It is a header-only **C++26** library that stores an sequence of aggregates in a **Structure-of-Arrays (SoA)** fashion, while having a container interface similar to STL. It uses static reflections to do this.
+`libsoa` is a library of SoA(Structure-Of-Arrays) containers. It is a header-only **C++26** library that stores a sequence of aggregates in a **Structure-of-Arrays (SoA)** fashion, while having a container interface similar to STL. It uses static reflections to do this.
 
 ## Introduction
 
