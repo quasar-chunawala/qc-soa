@@ -47,17 +47,21 @@ Consider an array of prices and quantities:
 
 ```cpp
 struct Level{
-  std::int64_t price_ticks;
-  std::int64_t quantity;
+  std::int64_t price_ticks;   // 8 bytes
+  std::int64_t quantity;      // 8 bytes
 };
 
 // Contigous price-level array
 std::array<Level, 256> price_level;
 ```
 
-This is contigous. The 
+This is contigous. When user-code is processing the $i$-th array element, `price_level[i]`, since `sizeof(Level) == 16`, the CPU would have likely fetched an entire cache line of $64$ bytes consisting of nearby array elements. Hence, they are likely to be found in the L1/L2/L3 cache. Traversing contigous data-structures is cache-friendly.
 
-Particles are at the heart of many astrophysical, environmental and industrial phenomena ranging from dynamics of galaxies, sandstorms, to combustion in diesel engines. $N$-body simulations in cosmology, turbulence problems in hydrodynamics etc. require numerical integration of the underlying equations of motion over many time-steps. Similarly, in a game-engine, imagine a scene where a rocket flies through the air, leaving behind a smoke trail. Suddenly, the rocket explodes leaving sparks flying everywhere. A `Particle` system, is common to all these problems. 
+On the other-hand, consider a node-based data-structure such as `std::map`. The heap nodes are scattered in memory, and at each step, accessing a node's `next` pointer can result in a cache miss. 
+
+## Structure-of-Arrays versus Array-of-Structures
+
+Particles are at the heart of many astrophysical, environmental and industrial phenomena ranging from dynamics of galaxies, sandstorms, to combustion in diesel engines. $N$-body simulations in cosmology, turbulence problems in hydrodynamics etc. require numerical integration of the underlying equations of motion over many time-steps. Similarly, in a game-engine, imagine a scene where a rocket flies through the air, leaving behind a smoke trail. Suddenly, the rocket explodes leaving sparks flying everywhere. A `Particle` system is commonly used in these domains. 
 
 ```cpp
 // 64 bytes
@@ -71,23 +75,21 @@ struct Particle{
 std::vector<Particle> particleSystem;
 ```
 
-Many of these problems only scan one field such as `velocity_` over many `Particle` records. 
-
 In the financial markets, a participant often receives bid-ask quotes from an exchange. 
 
 ```cpp
-struct Quotes {
-    std::array<std::int64_t, 1024> price_ticks;
-    std::array<std::int32_t, 1024> quantities;
-    std::array<std::uint32_t, 1024> venue_ids;
+struct Quote {
+    std::int64_t price_ticks;
+    std::int32_t quantity;
+    std::uint32_t venue_id;
 };
+
+std::array<Quote, 1024> quotes;
 ```
 
-A trading strategy may only scan one field `price_` to determine the best price. 
+The is an **Array-of-Structs(AoS)** layout. AoS layout keeps each complete `Particle` object contiguous, which is convenient and can be efficient during iteration when a one pass needs the whole object. 
 
-The above is Array-of-Structs(AoS) layout. AoS layout keeps each complete `Particle` object contigous, which is convenient and can be efficient during iteration when a one pass needs the whole object. 
-
-Consider, however an update loop, which reads only position and velocity. Cache lines fetched while traversing the vector may also contain `color_`, `lifetime_`, and padding that the loop does not use.
+Many of these problems only scan one field such as `velocity_` over many `Particle` records. Consider, an update loop, which reads only position and velocity. Cache lines fetched while traversing the vector may also contain `color_`, `lifetime_`, and padding that the loop does not use.
 
 ```cpp
 void update_positions(std::vector<Particle>& particles, float dt){
@@ -99,15 +101,15 @@ void update_positions(std::vector<Particle>& particles, float dt){
 
 Thus, the loop is wasteful. For particle systems, ECS components, and vertex processing, grouping the same fields across many objects can better match a hot loop’s access pattern.
 
-## Data Oriented Design Philosophy
+A trading strategy may only scan one field `price_` to determine the best price.  
+
+### Data Oriented Design Philosophy
 
 According to Data-Oriented-Design(DoD) principles, *the purpose of all programs and all parts of those programs, is to transform data from one form to another*. If you don't understand the data, you don't understand the problem. 
 
 Data oriented design is all about reorganizing your data-structures around for better performance. Andrew Kelley’s talk on the topic—especially his use of Zig’s `MultiArrayList` — offers a compelling real-world example.
 
-
-
-## Structure-of-Arrays(SoA) approach
+### Structure-of-Arrays(SoA) approach
 
 ```cpp
 struct ParticleSystem
@@ -120,6 +122,26 @@ struct ParticleSystem
 ```
 
 Positions and velocities now occupy separate, tightly traverse arrays. The update streams through the fields it needs while leaving colors and lifetimes untouched.
+
+```cpp
+struct Quotes {
+    std::array<std::int64_t, 1024> price_ticks;
+    std::array<std::int32_t, 1024> quantities;
+    std::array<std::uint32_t, 1024> venue_ids;
+};
+```
+
+If you only need prices, structure-of-arrays can cut unnecessary memory traffic.
+
+```cpp
+std::int64_t best_price = std::numeric_limits<std::int64_t>::max();
+
+for (const auto price : quotes.price_ticks) {
+    if (price < best_price) {
+        best_price = price;
+    }
+}
+```
 
 ## Computer hardware today
 
