@@ -26,7 +26,7 @@ Usually, when we are writing something like `a += b`; it is a register-register 
 In the 80s, the frequency of the CPU core was at a level equivalent to that of the memory bus. Memory access was only a bit slower than register access. Since then, the speeds of CPUs have grown by $3$ orders of magnitude, while memory latency has improved only $10-30$ fold or so. To deal with the remaining $30$x+ discrepancy, all kinds of caches were introduced. As a result, the speed of memory access depends significantly on the answer to - *where does the data we're trying to read, reside?*. The lower the cache level where your request was found - the faster you can get it. 
 
 <figure markdown="span">
-  ![CPU memory hierarchy: core, L1d/L1i, L2, L3 caches and main memory on the memory bus](memory_hierarchy.svg){ width="420" }
+  ![CPU memory hierarchy: core, L1d/L1i, L2, L3 caches and main memory on the memory bus](memory_hierarchy.svg)
   <figcaption>The memory hierarchy of a single CPU core.</figcaption>
 </figure>
 
