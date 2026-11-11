@@ -26,10 +26,11 @@ extra_javascript:
 
 nav:
   - Home: index.md
-  - Data Structures:
+  - Containers:
     - soa::vector<T>: vector.md
   - Runtime pre-condition checks: configuration.md
-  - Setup:
+  - Configure and build: build.md
+  - Developer Setup:
       - Linux: SetupLinux.md
       - MacOS: SetupMacOS.md
       - Windows: SetupWin64.md

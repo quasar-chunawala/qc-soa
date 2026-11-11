@@ -123,10 +123,6 @@ Positions and velocities now occupy separate, tightly traverse arrays. The updat
 
 ## Computer hardware today
 
-In earlier days, computers were much simpler. The various components of a system, such as the CPU, memory, mass storage, and network interfaces, were developed together and as a result, were quite balanced in performance. For example, memory and network interfaces were not much faster than the CPU at providing data.
-
-This situation changed once the basic structure of computers stabilized and hardware developers started concentrating on optimizing individual subsystems. Suddenly, the performance of some components of the computer fell significantly behind and bottlenecks were developed. 
-
 ### SRAM versus DRAM
 
 The static qualifier differentiates SRAM from DRAM(Dynamic Random Access Memory). In the presence of constant power, an SRAM cell maintains its state (`0` or `1`). But it is more expensive in terms of silicon area and cost. Typically, SRAM is used for the  internal registers and the cache memory of a CPU, while DRAM is used for a computer's main memory.
@@ -134,54 +130,4 @@ The static qualifier differentiates SRAM from DRAM(Dynamic Random Access Memory)
 Dynamic RAM is in its structure, much simpler than static RAM. All it consists of is one transistor and one capacitor. 
 
 A dynamic RAM cell keeps its state in the capacitor $\textbf{C}$. The transistor $\textbf{M}$ is used to guard access to the state. To read the state of the cell, the access line $\textbf{AL}$ is raised; this either causes a current to flow on the data line $\textbf{DL}$ or not, depending on the charge in the capacitor. 
-
-
-
-## Configure and Build
-
-To list all presets, execute:
-
-```bash
-cmake --list-presets
-```
-
-To configure and build the code, run:
-
-```
-cmake --preset <preset-name>
-cmake --build --preset <preset-name>
-```
-
-- To install dependencies for Linux, follow the instructions in [SetupLinux.md](./SetupLinux.md).
-
-- To install dependencies for Win64, refer [SetupWin64.md](./SetupWin64.md).
-
-- To install dependencies for MacOS, refer [SetupMacOS.md](./SetupMacOS.md)
-
-## Compatibility
-
-- **Language Standard**: C++26
-- **Compilers Tested**: 
-  - GCC 16.2
-  
-
-## Integration
-
-This library is header-only and can be copied directly into your project or fetched via CMake.
-
-### CMake FetchContent
-
-```cmake
-include(FetchContent)
-
-FetchContent_Declare(
-  libasoa
-  GIT_REPOSITORY https://github.com/quasar-chunawala/qc-soa.git
-  GIT_TAG        v1.0.0
-)
-FetchContent_MakeAvailable(soa)
-
-target_link_libraries(your_target PRIVATE soa)
-```
-
 
