@@ -17,27 +17,45 @@ On paper, a $O(1)$ algorithm runs faster than a $O(n)$ algorithm. Even if you ra
 
 In practice, however, an algorithm with prettier Big-$O$ can lose to a simpler layout if it pointer chases through cold memory. 
 
-## Computer hardware today
-
-In earlier days, computers were much simpler. The various components of a system, such as the CPU, memory, mass storage, and network interfaces, were developed together and as a result, were quite balanced in performance. For example, memory and network interfaces were not much faster than the CPU at providing data.
-
-This situation changed once the basic structure of computers stabilized and hardware developers started concentrating on optimizing individual subsystems. Suddenly, the performance of some components of the computer fell significantly behind and bottlenecks were developed. 
-
-### SRAM versus DRAM
-
-The static qualifier differentiates SRAM from DRAM(Dynamic Random Access Memory). In the presence of constant power, an SRAM cell maintains its state (`0` or `1`). But it is more expensive in terms of silicon area and cost. Typically, SRAM is used for the  internal registers and the cache memory of a CPU, while DRAM is used for a computer's main memory.
-
-Dynamic RAM is in its structure, much simpler than static RAM. All it consists of is one transistor and one capacitor. 
-
-A dynamic RAM cell keeps its state in the capacitor $\textbf{C}$. The transistor $\textbf{M}$ is used to guard access to the state. To read the state of the cell, the access line $\textbf{AL}$ is raised; this either causes a current to flow on the data line $\textbf{DL}$ or not, depending on the charge in the capacitor. 
-
 ## Cache behavior is often more important than Big-$O$ notation
 
 Modern CPUs are extremely fast at data already in registers or nearby cache. 
 
 Usually, when we are writing something like `a += b`; it is a register-register (R-R) operation, so the data has to go from the registers to the ALU and back. However, all modern 64-bit CPUs are actually pipelined, so by the time the ALU actually needs this information, it is altready at the CPU entrance, so we can avoid the latency penalty of going from registers to ALU and back. 
 
-If we need to access information outside of the CPU registers - the CPU has to go to the memory. It goes to the L1D(Data) cache first; reading from L1D cache usually takes $\approx 3$ clock cycles. 
+In the 80s, the frequency of the CPU core was at a level equivalent to that of the memory bus. Memory access was only a bit slower than register access. Since then, the speeds of CPUs have grown by $3$ orders of magnitude, while memory latency has improved only $10-30$ fold or so. To deal with the remaining $30$x+ discrepancy, all kinds of caches were introduced. As a result, the speed of memory access depends significantly on the answer to - *where does the data we're trying to read, reside?*. The lower the cache level where your request was found - the faster you can get it. 
+
+L1 and L2 cache access times can be found in official documents such as the [Intel® 64 and IA-32 Architectures Optimization Reference Manual](http://www.intel.co.uk/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf). 
+
+| Memory type       | Access time (CPU cycles) |
+|-------------------|--------------------------|
+| L1 cache          | 4                        |
+| L2 cache          | 12                       |
+| L3 cache          | 75                       |
+| Main memory (RAM) | ~180 (≈ 60 ns)           |
+
+However, what is more difficult to find is information about main memory(RAM) access times. [Levinthal](https://www.intel.com/content/www/us/en/404.html?ref=https://software.intel.com/sites/products/collateral/hpc/vtune/performance_analysis_guide.pdf) lists it at $60$ns ($~180$ cycles).
+
+Only process shrinking (going from $60$nm to $10$nm) can further improve those numbers. But, there physical limitations to that. 
+
+When the processor recognizes that an operand being read from memory is cacheable, the processor reads an entire **cache line**($64$ bytes on modern CPUs) into the appropriate cache (L1, L2, L3, or all). This operation is called a cache line fill. If the memory location containing that operand is still cached the next time the processor attempts to access the operand, the processor can read the operand from the cache instead of going back to memory. This operation is called a cache hit. 
+
+When the processor attempts to write an operand to a cacheable area of memory, it first checks if a cache line for that memory location exists in the cache. If a valid cache line does exist, the processor (depending on the write policy currently in force) can write the operand into the cache instead of writing it out to system memory. This operation is called a write hit. If a write misses the cache (that is, a valid cache line is not present for area of memory being written to), the processor performs a cache line fill, write allocation. Then it writes the operand into
+the cache line and (depending on the write policy currently in force) can also write it out to memory. If the operand is to be written out to memory, it is written first into the store buffer, and then written from the store buffer to memory when the system bus is available.
+
+Consider an array of prices and quantities:
+
+```cpp
+struct Level{
+  std::int64_t price_ticks;
+  std::int64_t quantity;
+};
+
+// Contigous price-level array
+std::array<Level, 256> price_level;
+```
+
+This is contigous. The 
 
 Particles are at the heart of many astrophysical, environmental and industrial phenomena ranging from dynamics of galaxies, sandstorms, to combustion in diesel engines. $N$-body simulations in cosmology, turbulence problems in hydrodynamics etc. require numerical integration of the underlying equations of motion over many time-steps. Similarly, in a game-engine, imagine a scene where a rocket flies through the air, leaving behind a smoke trail. Suddenly, the rocket explodes leaving sparks flying everywhere. A `Particle` system, is common to all these problems. 
 
@@ -102,6 +120,22 @@ struct ParticleSystem
 ```
 
 Positions and velocities now occupy separate, tightly traverse arrays. The update streams through the fields it needs while leaving colors and lifetimes untouched.
+
+## Computer hardware today
+
+In earlier days, computers were much simpler. The various components of a system, such as the CPU, memory, mass storage, and network interfaces, were developed together and as a result, were quite balanced in performance. For example, memory and network interfaces were not much faster than the CPU at providing data.
+
+This situation changed once the basic structure of computers stabilized and hardware developers started concentrating on optimizing individual subsystems. Suddenly, the performance of some components of the computer fell significantly behind and bottlenecks were developed. 
+
+### SRAM versus DRAM
+
+The static qualifier differentiates SRAM from DRAM(Dynamic Random Access Memory). In the presence of constant power, an SRAM cell maintains its state (`0` or `1`). But it is more expensive in terms of silicon area and cost. Typically, SRAM is used for the  internal registers and the cache memory of a CPU, while DRAM is used for a computer's main memory.
+
+Dynamic RAM is in its structure, much simpler than static RAM. All it consists of is one transistor and one capacitor. 
+
+A dynamic RAM cell keeps its state in the capacitor $\textbf{C}$. The transistor $\textbf{M}$ is used to guard access to the state. To read the state of the cell, the access line $\textbf{AL}$ is raised; this either causes a current to flow on the data line $\textbf{DL}$ or not, depending on the charge in the capacitor. 
+
+
 
 ## Configure and Build
 
