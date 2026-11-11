@@ -161,5 +161,22 @@ A dynamic RAM cell keeps its state in the capacitor $\textbf{C}$. The transistor
 
 There are a number of complications with this design of dynamic RAM. The use of a capacitor means that reading the cell discharges the capacitor. The procedure cannot be repeated indefinitely, and the capacitor must be recharged at some point. Even worse, to accomodate the huge number of cells(chips with $10^9$ cells are now common), the capacitance of the capacitor must be low (in femto-farad range or lower). It only takes a few seconds for the charge held in a capacitor to dissipate. This problem is called **leakage**. 
 
-The leakage is why a DRAM cell must be constantly refreshed. For most DRAM chips, this refresh must happen every 64ms. During the refresh cycle, no access to 
+The leakage is why a DRAM cell must be constantly refreshed. For most DRAM chips, this refresh must happen every 64ms. During the refresh cycle, no access to the memory is possible. For some workloads, this overhead may stall upto $50\%$ of the memory accesses. 
+
+A second problem resulting from the tiny charge is that the information read from the cell is not directly usable. The data line must be connected to an amplifier which can distinguish between a `0` or `1` over the whole range of charges which still have to count as `1`. 
+
+A third problem is that charging and draining a capacitor is not instantaneous. The signals received by the sense amplifier are not rectangular, and so a conservative estimate as to when the output of the cell is usable has to be used. The formulas for charging and discharging a capacitor are:
+
+$$
+\begin{align*}
+Q_{\text{charge}}(t) &= Q_0(1 - e^{-\frac{t}{RC}}) \\
+Q_{\text{discharge}}(t) &= Q_0e^{-\frac{t}{RC}}
+\end{align*}
+$$
+
+This means that it take some time for the capacitor to be charged (writing) and drained (reading). So, the current that can be detected by the sense amplifiers is not immediately available. Unlike the SRAM case, where the output is immediately available, when the word access line is raised, it always takes a bit of time to read/write the capacitor. This delay severely limits how fast DRAM can be. 
+
+This simple approach has some advantages too. The main advantage is size. The chip real estate needed for one DRAM cell is many times smaller than that of an SRAM cell. The SRAM cells also need individual power for the transistors maintaining the state. 
+
+Overall, the quite dramatic difference in cost wins. Except in specialized hardware — network routers, for example — we have to live with main memory which is based on DRAM. 
 
