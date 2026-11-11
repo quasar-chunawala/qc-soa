@@ -32,7 +32,7 @@ L1 and L2 cache access times can be found in official documents such as the [Int
 | L1 cache          | $4$                                |
 | L2 cache          | $12$                               |
 | L3 cache          | $75$                               |
-| Main memory (RAM) | $\similar 180(\approx 60\text{ns})$|
+| Main memory (RAM) | $\sim 180(\approx 60\text{ns})$    |
 
 However, what is more difficult to find is information about main memory(RAM) access times. [Levinthal](https://www.intel.com/content/www/us/en/404.html?ref=https://software.intel.com/sites/products/collateral/hpc/vtune/performance_analysis_guide.pdf) lists it at $60$ns ($~180$ cycles).
 
