@@ -180,3 +180,7 @@ This simple approach has some advantages too. The main advantage is size. The ch
 
 Overall, the quite dramatic difference in cost wins. Except in specialized hardware — network routers, for example — we have to live with main memory which is based on DRAM. 
 
+### DRAM Access
+
+A program selects a memory location using a virtual address. The processor translates this into a physical address and finally the **memory controller** selects the RAM chip corresponding to that address. To select the individual memory cell on the RAM chip, parts of the physical address are passed in the form 
+
