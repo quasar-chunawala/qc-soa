@@ -1,0 +1,1136 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://quasar-chunawala.github.io/qc-soa/">
+      
+      
+      
+        <link rel="next" href="vector/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>libsoa</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#libsoa" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="libsoa" class="md-header__button md-logo" aria-label="libsoa" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            libsoa
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/quasar-chunawala/qc-soa" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    quasar-chunawala/qc-soa
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="vector/" class="md-tabs__link">
+          
+  
+  
+  Containers
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="configuration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Runtime pre-condition checks
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="build/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configure and build
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="SetupLinux/" class="md-tabs__link">
+          
+  
+  
+  Developer Setup
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+                
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="libsoa" class="md-nav__button md-logo" aria-label="libsoa" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    libsoa
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/quasar-chunawala/qc-soa" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    quasar-chunawala/qc-soa
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cache-behavior-is-often-more-important-than-big-o-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cache behavior is often more important than Big-\(O\) notation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure-of-arrays-versus-array-of-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structure-of-Arrays versus Array-of-Structures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Structure-of-Arrays versus Array-of-Structures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-oriented-design-philosophy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Oriented Design Philosophy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structure-of-arrayssoa-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structure-of-Arrays(SoA) approach
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#computer-hardware-today" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Computer hardware today
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Computer hardware today">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sram-versus-dram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SRAM versus DRAM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dram-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DRAM Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Containers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Containers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="vector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    soa::vector<T>
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime pre-condition checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="build/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configure and build
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Setup
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developer Setup
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="SetupLinux/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linux
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="SetupMacOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MacOS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="SetupWin64/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+                
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" hidden>
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cache-behavior-is-often-more-important-than-big-o-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cache behavior is often more important than Big-\(O\) notation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure-of-arrays-versus-array-of-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structure-of-Arrays versus Array-of-Structures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Structure-of-Arrays versus Array-of-Structures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-oriented-design-philosophy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Oriented Design Philosophy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structure-of-arrayssoa-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structure-of-Arrays(SoA) approach
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#computer-hardware-today" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Computer hardware today
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Computer hardware today">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sram-versus-dram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SRAM versus DRAM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dram-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DRAM Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+
+
+
+  
+  
+
+
+<h1 id="libsoa"><code>libsoa</code><a class="headerlink" href="#libsoa" title="Permanent link">&para;</a></h1>
+<p><a href="https://github.com/quasar-chunawala/qc-soa/actions/workflows/linux.yml"><img alt="Linux x86 build" src="https://github.com/quasar-chunawala/qc-soa/actions/workflows/linux.yml/badge.svg?branch=main" /></a>
+<a href="https://github.com/quasar-chunawala/qc-soa/actions/workflows/macos.yml"><img alt="MacOS build" src="https://github.com/quasar-chunawala/qc-soa/actions/workflows/macos.yml/badge.svg?branch=main" /></a>
+<a href="https://github.com/quasar-chunawala/qc-soa/actions/workflows/windows.yml"><img alt="Win32/64 build" src="https://github.com/quasar-chunawala/qc-soa/actions/workflows/windows.yml/badge.svg?branch=main" /></a></p>
+<p><code>libsoa</code> is a library of SoA(Structure-Of-Arrays) containers. It is a header-only <strong>C++26</strong> library that stores a sequence of aggregates in a <strong>Structure-of-Arrays (SoA)</strong> fashion, while having a container interface similar to STL. It uses static reflections to do this.</p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>On paper, a <span class="arithmatex">\(O(1)\)</span> algorithm runs faster than a <span class="arithmatex">\(O(n)\)</span> algorithm. Even if you ran the <span class="arithmatex">\(O(n)\)</span> algorithm on a super-computer and the <span class="arithmatex">\(O(1)\)</span> algorithm on a digital watch, we have a theoretical guarantee that the <span class="arithmatex">\(O(1)\)</span> algorithm beats the <span class="arithmatex">\(O(n)\)</span> algorithm. Everybody loves a guarantee! It is independent of hardware constants. </p>
+<p>In practice, however, an algorithm with prettier Big-<span class="arithmatex">\(O\)</span> can lose to a simpler layout if it pointer chases through cold memory. </p>
+<h2 id="cache-behavior-is-often-more-important-than-big-o-notation">Cache behavior is often more important than Big-<span class="arithmatex">\(O\)</span> notation<a class="headerlink" href="#cache-behavior-is-often-more-important-than-big-o-notation" title="Permanent link">&para;</a></h2>
+<p>Modern CPUs are extremely fast at data already in registers or nearby cache. </p>
+<p>Usually, when we are writing something like <code>a += b</code>; it is a register-register (R-R) operation, so the data has to go from the registers to the ALU and back. However, all modern 64-bit CPUs are actually pipelined, so by the time the ALU actually needs this information, it is altready at the CPU entrance, so we can avoid the latency penalty of going from registers to ALU and back. </p>
+<p>In the 80s, the frequency of the CPU core was at a level equivalent to that of the memory bus. Memory access was only a bit slower than register access. Since then, the speeds of CPUs have grown by <span class="arithmatex">\(3\)</span> orders of magnitude, while memory latency has improved only <span class="arithmatex">\(10-30\)</span> fold or so. To deal with the remaining <span class="arithmatex">\(30\)</span>x+ discrepancy, all kinds of caches were introduced. As a result, the speed of memory access depends significantly on the answer to - <em>where does the data we're trying to read, reside?</em>. The lower the cache level where your request was found - the faster you can get it. </p>
+<figure>
+  <img alt="CPU memory hierarchy: core, L1d/L1i, L2, L3 caches and main memory on the memory bus" src="memory_hierarchy.svg" width="600" />
+<br />
+<figcaption>The memory hierarchy of a single CPU core.</figcaption>
+</figure>
+<p>L1 and L2 cache access times can be found in official documents such as the <a href="http://www.intel.co.uk/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf">Intel® 64 and IA-32 Architectures Optimization Reference Manual</a>. </p>
+<table>
+<thead>
+<tr>
+<th>Memory type</th>
+<th>Access time (CPU cycles)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1 cache</td>
+<td><span class="arithmatex">\(4\)</span></td>
+</tr>
+<tr>
+<td>L2 cache</td>
+<td><span class="arithmatex">\(12\)</span></td>
+</tr>
+<tr>
+<td>L3 cache</td>
+<td><span class="arithmatex">\(75\)</span></td>
+</tr>
+<tr>
+<td>Main memory (RAM)</td>
+<td><span class="arithmatex">\(\sim 180(\approx 60\text{ns})\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>However, what is more difficult to find is information about main memory(RAM) access times. <a href="https://www.intel.com/content/www/us/en/404.html?ref=https://software.intel.com/sites/products/collateral/hpc/vtune/performance_analysis_guide.pdf">Levinthal</a> lists it at <span class="arithmatex">\(60\)</span>ns (<span class="arithmatex">\(~180\)</span> cycles).</p>
+<p>Only process shrinking (going from <span class="arithmatex">\(60\)</span>nm to <span class="arithmatex">\(10\)</span>nm) can further improve those numbers. But, there physical limitations to that. </p>
+<p>When the processor recognizes that an operand being read from memory is cacheable, the processor reads an entire <strong>cache line</strong>(<span class="arithmatex">\(64\)</span> bytes on modern CPUs) into the appropriate cache (L1, L2, L3, or all). This operation is called a cache line fill. If the memory location containing that operand is still cached the next time the processor attempts to access the operand, the processor can read the operand from the cache instead of going back to memory. This operation is called a cache hit. </p>
+<p>When the processor attempts to write an operand to a cacheable area of memory, it first checks if a cache line for that memory location exists in the cache. If a valid cache line does exist, the processor (depending on the write policy currently in force) can write the operand into the cache instead of writing it out to system memory. This operation is called a write hit. If a write misses the cache (that is, a valid cache line is not present for area of memory being written to), the processor performs a cache line fill, write allocation. Then it writes the operand into
+the cache line and (depending on the write policy currently in force) can also write it out to memory. If the operand is to be written out to memory, it is written first into the store buffer, and then written from the store buffer to memory when the system bus is available.</p>
+<p>Consider an array of prices and quantities:</p>
+<div class="highlight"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">Level</span><span class="p">{</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">price_ticks</span><span class="p">;</span><span class="w">   </span><span class="c1">// 8 bytes</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">quantity</span><span class="p">;</span><span class="w">      </span><span class="c1">// 8 bytes</span>
+<span class="p">};</span>
+
+<span class="c1">// Contigous price-level array</span>
+<span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">Level</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="o">&gt;</span><span class="w"> </span><span class="n">price_level</span><span class="p">;</span>
+</code></pre></div>
+<p>This is contigous. When user-code is processing the <span class="arithmatex">\(i\)</span>-th array element, <code>price_level[i]</code>, since <code>sizeof(Level) == 16</code>, the CPU would have likely fetched an entire cache line of <span class="arithmatex">\(64\)</span> bytes consisting of nearby array elements. Hence, they are likely to be found in the L1/L2/L3 cache. Traversing contigous data-structures is cache-friendly.</p>
+<p>On the other-hand, consider a node-based data-structure such as <code>std::map</code>. The heap nodes are scattered in memory, and at each step, accessing a node's <code>next</code> pointer can result in a cache miss. </p>
+<h2 id="structure-of-arrays-versus-array-of-structures">Structure-of-Arrays versus Array-of-Structures<a class="headerlink" href="#structure-of-arrays-versus-array-of-structures" title="Permanent link">&para;</a></h2>
+<p>Particles are at the heart of many astrophysical, environmental and industrial phenomena ranging from dynamics of galaxies, sandstorms, to combustion in diesel engines. <span class="arithmatex">\(N\)</span>-body simulations in cosmology, turbulence problems in hydrodynamics etc. require numerical integration of the underlying equations of motion over many time-steps. Similarly, in a game-engine, imagine a scene where a rocket flies through the air, leaving behind a smoke trail. Suddenly, the rocket explodes leaving sparks flying everywhere. A <code>Particle</code> system is commonly used in these domains. </p>
+<div class="highlight"><pre><span></span><code><span class="c1">// 64 bytes</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Particle</span><span class="p">{</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">lifetime_</span><span class="p">;</span><span class="w">  </span><span class="c1">// 4 bytes, 4 bytes padding  </span>
+<span class="w">  </span><span class="n">Vec3</span><span class="w"> </span><span class="n">position_</span><span class="p">;</span><span class="w">   </span><span class="c1">// 24 bytes</span>
+<span class="w">  </span><span class="n">Vec3</span><span class="w"> </span><span class="n">velocity_</span><span class="p">;</span><span class="w">   </span><span class="c1">// 24 bytes</span>
+<span class="w">  </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">color_</span><span class="p">;</span><span class="w">  </span><span class="c1">// 4 bytes, 4 bytes padding</span>
+<span class="p">};</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Particle</span><span class="o">&gt;</span><span class="w"> </span><span class="n">particleSystem</span><span class="p">;</span>
+</code></pre></div>
+<p>In the financial markets, a participant often receives bid-ask quotes from an exchange. </p>
+<div class="highlight"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">Quote</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">price_ticks</span><span class="p">;</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="kt">int32_t</span><span class="w"> </span><span class="n">quantity</span><span class="p">;</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">venue_id</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">Quote</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="o">&gt;</span><span class="w"> </span><span class="n">quotes</span><span class="p">;</span>
+</code></pre></div>
+<p>The is an <strong>Array-of-Structs(AoS)</strong> layout. AoS layout keeps each complete <code>Particle</code> object contiguous, which is convenient and can be efficient during iteration when a one pass needs the whole object. </p>
+<p>Many of these problems only scan one field such as <code>velocity_</code> over many <code>Particle</code> records. Consider, an update loop, which reads only position and velocity. Cache lines fetched while traversing the vector may also contain <code>color_</code>, <code>lifetime_</code>, and padding that the loop does not use.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">update_positions</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Particle</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">particles</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="p">){</span>
+<span class="w">  </span><span class="k">for</span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">particle</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">particles</span><span class="p">){</span>
+<span class="w">    </span><span class="n">particle</span><span class="p">.</span><span class="n">position_</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">particle</span><span class="p">.</span><span class="n">velocity_</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dt</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Thus, the loop is wasteful. For particle systems, ECS components, and vertex processing, grouping the same fields across many objects can better match a hot loop’s access pattern.</p>
+<p>A trading strategy may only scan one field <code>price_</code> to determine the best price.  </p>
+<h3 id="data-oriented-design-philosophy">Data Oriented Design Philosophy<a class="headerlink" href="#data-oriented-design-philosophy" title="Permanent link">&para;</a></h3>
+<p>According to Data-Oriented-Design(DoD) principles, <em>the purpose of all programs and all parts of those programs, is to transform data from one form to another</em>. If you don't understand the data, you don't understand the problem. </p>
+<p>Data oriented design is all about reorganizing your data-structures around for better performance. Andrew Kelley’s talk on the topic—especially his use of Zig’s <code>MultiArrayList</code> — offers a compelling real-world example.</p>
+<h3 id="structure-of-arrayssoa-approach">Structure-of-Arrays(SoA) approach<a class="headerlink" href="#structure-of-arrayssoa-approach" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">ParticleSystem</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lifetimes_</span><span class="p">;</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Vec3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">positions_</span><span class="p">;</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Vec3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">velocities_</span><span class="p">;</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="w"> </span><span class="n">colors_</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+<p>Positions and velocities now occupy separate, tightly traverse arrays. The update streams through the fields it needs while leaving colors and lifetimes untouched.</p>
+<div class="highlight"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">Quotes</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="kt">int64_t</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="o">&gt;</span><span class="w"> </span><span class="n">price_ticks</span><span class="p">;</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="kt">int32_t</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="o">&gt;</span><span class="w"> </span><span class="n">quantities</span><span class="p">;</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="kt">uint32_t</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="o">&gt;</span><span class="w"> </span><span class="n">venue_ids</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+<p>If you only need prices, structure-of-arrays can cut unnecessary memory traffic.</p>
+<div class="highlight"><pre><span></span><code><span class="n">std</span><span class="o">::</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">best_price</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">numeric_limits</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="kt">int64_t</span><span class="o">&gt;::</span><span class="n">max</span><span class="p">();</span>
+
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">price</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">quotes</span><span class="p">.</span><span class="n">price_ticks</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">price</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">best_price</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">best_price</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">price</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="computer-hardware-today">Computer hardware today<a class="headerlink" href="#computer-hardware-today" title="Permanent link">&para;</a></h2>
+<h3 id="sram-versus-dram">SRAM versus DRAM<a class="headerlink" href="#sram-versus-dram" title="Permanent link">&para;</a></h3>
+<p>The static qualifier differentiates SRAM from DRAM(Dynamic Random Access Memory). In the presence of constant power, an SRAM cell maintains its state (<code>0</code> or <code>1</code>). But it is more expensive in terms of silicon area and cost. Typically, SRAM is used for the  internal registers and the cache memory of a CPU, while DRAM is used for a computer's main memory.</p>
+<p>Dynamic RAM is in its structure, much simpler than static RAM. All it consists of is one transistor and one capacitor. </p>
+<p>A dynamic RAM cell keeps its state in the capacitor <span class="arithmatex">\(\textbf{C}\)</span>. The transistor <span class="arithmatex">\(\textbf{M}\)</span> is used to guard access to the state. To read the state of the cell, the access line <span class="arithmatex">\(\textbf{AL}\)</span> is raised; this either causes a current to flow on the data line <span class="arithmatex">\(\textbf{DL}\)</span> or not, depending on the charge in the capacitor. To write to the cell, the data line <span class="arithmatex">\(\mathbf{DL}\)</span> is appropriately set and then <span class="arithmatex">\(\mathbf{AL}\)</span> is raised for a time long enough to charge or drain the capacitor. So, the transistor <span class="arithmatex">\(\mathbf{M}\)</span> acts as a gate. </p>
+<p>There are a number of complications with this design of dynamic RAM. The use of a capacitor means that reading the cell discharges the capacitor. The procedure cannot be repeated indefinitely, and the capacitor must be recharged at some point. Even worse, to accomodate the huge number of cells(chips with <span class="arithmatex">\(10^9\)</span> cells are now common), the capacitance of the capacitor must be low (in femto-farad range or lower). It only takes a few seconds for the charge held in a capacitor to dissipate. This problem is called <strong>leakage</strong>. </p>
+<p>The leakage is why a DRAM cell must be constantly refreshed. For most DRAM chips, this refresh must happen every 64ms. During the refresh cycle, no access to the memory is possible. For some workloads, this overhead may stall upto <span class="arithmatex">\(50\%\)</span> of the memory accesses. </p>
+<p>A second problem resulting from the tiny charge is that the information read from the cell is not directly usable. The data line must be connected to an amplifier which can distinguish between a <code>0</code> or <code>1</code> over the whole range of charges which still have to count as <code>1</code>. </p>
+<p>A third problem is that charging and draining a capacitor is not instantaneous. The signals received by the sense amplifier are not rectangular, and so a conservative estimate as to when the output of the cell is usable has to be used. The formulas for charging and discharging a capacitor are:</p>
+<div class="arithmatex">\[
+\begin{align*}
+Q_{\text{charge}}(t) &amp;= Q_0(1 - e^{-\frac{t}{RC}}) \\
+Q_{\text{discharge}}(t) &amp;= Q_0e^{-\frac{t}{RC}}
+\end{align*}
+\]</div>
+<p>This means that it take some time for the capacitor to be charged (writing) and drained (reading). So, the current that can be detected by the sense amplifiers is not immediately available. Unlike the SRAM case, where the output is immediately available, when the word access line is raised, it always takes a bit of time to read/write the capacitor. This delay severely limits how fast DRAM can be. </p>
+<p>This simple approach has some advantages too. The main advantage is size. The chip real estate needed for one DRAM cell is many times smaller than that of an SRAM cell. The SRAM cells also need individual power for the transistors maintaining the state. </p>
+<p>Overall, the quite dramatic difference in cost wins. Except in specialized hardware — network routers, for example — we have to live with main memory which is based on DRAM. </p>
+<h3 id="dram-access">DRAM Access<a class="headerlink" href="#dram-access" title="Permanent link">&para;</a></h3>
+<p>A program selects a memory location using a virtual address. The processor translates this into a physical address and finally the <strong>memory controller</strong> selects the RAM chip corresponding to that address. To select the individual memory cell on the RAM chip, parts of the physical address are passed in the form </p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+  
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.tabs.sticky", "content.code.copy"], "search": "assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

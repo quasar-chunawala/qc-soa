@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://quasar-chunawala.github.io/qc-soa/</loc>
+         <lastmod>2026-11-12</lastmod>
+    </url>
+    <url>
+         <loc>https://quasar-chunawala.github.io/qc-soa/SetupLinux/</loc>
+         <lastmod>2026-11-12</lastmod>
+    </url>
+    <url>
+         <loc>https://quasar-chunawala.github.io/qc-soa/SetupMacOS/</loc>
+         <lastmod>2026-11-12</lastmod>
+    </url>
+    <url>
+         <loc>https://quasar-chunawala.github.io/qc-soa/SetupWin64/</loc>
+         <lastmod>2026-11-12</lastmod>
+    </url>
+    <url>
+         <loc>https://quasar-chunawala.github.io/qc-soa/build/</loc>
+         <lastmod>2026-11-12</lastmod>
+    </url>
+    <url>
+         <loc>https://quasar-chunawala.github.io/qc-soa/configuration/</loc>
+         <lastmod>2026-11-12</lastmod>
+    </url>
+    <url>
+         <loc>https://quasar-chunawala.github.io/qc-soa/vector/</loc>
+         <lastmod>2026-11-12</lastmod>
+    </url>
+</urlset>
