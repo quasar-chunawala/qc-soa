@@ -4,3 +4,4 @@ AccessModifierOffset: -4
 BreakTemplateDeclarations: Yes
 ColumnLimit: 120
 IndentWidth: 4
+PointerAlignment: Left

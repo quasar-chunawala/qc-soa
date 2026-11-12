@@ -55,9 +55,9 @@ template <typename T, typename Allocator = std::allocator<T>>
 struct split_buffer {
     using value_type = T;
     using size_type = std::size_t;
-    using reference = T &;
-    using const_reference = const T &;
-    using pointer = T *;
+    using reference = T&;
+    using const_reference = const T&;
+    using pointer = T*;
 
     struct Pointers;
     struct ConstPointers;
@@ -104,16 +104,16 @@ struct split_buffer {
     struct References : ReferencesBase {
 
         template <typename... Args>
-        References(Args &...args) : ReferencesBase{args...} {}
+        References(Args&... args) : ReferencesBase{args...} {}
 
-        References &operator=(const T &value) {
+        References& operator=(const T& value) {
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                 this->[:ref_members[I]:] = value.[:members[I]:];
             }
             return *this;
         }
 
-        References *operator->() { return this; }
+        References* operator->() { return this; }
 
         /**
          * @brief Comparison operator
@@ -122,7 +122,7 @@ struct split_buffer {
          * @return true
          * @return false
          */
-        bool operator==(const T &value) const {
+        bool operator==(const T& value) const {
             bool isEqual{true};
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                 isEqual &= (this->[:ref_members[I]:] == value.[:members[I]:]);
@@ -142,15 +142,15 @@ struct split_buffer {
     struct ConstReferences : ConstReferencesBase {
 
         template <typename... Args>
-        ConstReferences(Args &...args) : ConstReferencesBase{args...} {}
+        ConstReferences(Args&... args) : ConstReferencesBase{args...} {}
 
-        ConstReferences(const References &other) {
+        ConstReferences(const References& other) {
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                 this->[:const_ref_members[I]:] == other.[:ref_members[I]:];
             }
         }
 
-        ConstReferences *operator->() { return this; }
+        ConstReferences* operator->() { return this; }
 
         /**
          * @brief Comparison operator
@@ -159,7 +159,7 @@ struct split_buffer {
          * @return true
          * @return false
          */
-        bool operator==(const T &value) const {
+        bool operator==(const T& value) const {
             bool isEqual{true};
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                 isEqual &= (this->[:const_ref_members[I]:] == value.[:members[I]:]);
@@ -185,7 +185,7 @@ struct split_buffer {
     };
 
     Pointers pointers_{};
-    StorageBlock *raw_memory_{nullptr};
+    StorageBlock* raw_memory_{nullptr};
     std::size_t begin_offset_{0};
     std::size_t size_{0};
     std::size_t capacity_{0};
@@ -239,7 +239,7 @@ struct split_buffer {
             return basic_iterator(ptrs_t{(ptrs + n)...});
         }
 
-        constexpr basic_iterator &operator+=(std::ptrdiff_t n) {
+        constexpr basic_iterator& operator+=(std::ptrdiff_t n) {
             auto [... ptrs] = ptrs_;
             *this = basic_iterator(ptrs_t{(ptrs + n)...});
             return *this;
@@ -251,17 +251,17 @@ struct split_buffer {
             return basic_iterator(ptrs_t{(ptrs - n)...});
         }
 
-        constexpr basic_iterator &operator-=(std::ptrdiff_t n) {
+        constexpr basic_iterator& operator-=(std::ptrdiff_t n) {
             auto [... ptrs] = ptrs_;
             *this = basic_iterator(ptrs_t{(ptrs - n)...});
             return *this;
         }
 
-        friend constexpr basic_iterator operator+(std::ptrdiff_t n, const basic_iterator &rhs) { return rhs + n; }
+        friend constexpr basic_iterator operator+(std::ptrdiff_t n, const basic_iterator& rhs) { return rhs + n; }
 
-        friend constexpr basic_iterator operator-(std::ptrdiff_t n, const basic_iterator &rhs) { return rhs - n; }
+        friend constexpr basic_iterator operator-(std::ptrdiff_t n, const basic_iterator& rhs) { return rhs - n; }
 
-        constexpr std::ptrdiff_t operator-(const basic_iterator &rhs) {
+        constexpr std::ptrdiff_t operator-(const basic_iterator& rhs) {
             auto [lhs_first, ... ptrs1] = ptrs_;
             auto [rhs_first, ... ptrs2] = rhs.ptrs_;
             return lhs_first - rhs_first;
@@ -281,41 +281,41 @@ struct split_buffer {
 
         constexpr const ref_t operator[](std::size_t idx) const { return ref_t{*(*this + idx)}; }
 
-        constexpr ref_t *operator->() {
+        constexpr ref_t* operator->() {
             auto [... ptrs] = ptrs_;
             ref_t ref = ref_t((*ptrs)...);
             return ref;
         }
 
-        constexpr const ref_t *operator->() const {
+        constexpr const ref_t* operator->() const {
             auto [... ptrs] = ptrs_;
             ref_t ref = ref_t((*ptrs)...);
             return ref;
         }
 
-        constexpr bool operator==(const basic_iterator &rhs) const {
+        constexpr bool operator==(const basic_iterator& rhs) const {
             auto [... lhs_ptrs] = ptrs_;
             auto [... rhs_ptrs] = rhs.ptrs_;
             return ((lhs_ptrs == rhs_ptrs) && ...);
         }
 
-        constexpr friend bool operator<(const basic_iterator &lhs, const basic_iterator &rhs) {
+        constexpr friend bool operator<(const basic_iterator& lhs, const basic_iterator& rhs) {
             auto [... lhs_ptrs] = lhs.ptrs_;
             auto [... rhs_ptrs] = rhs.ptrs_;
             return ((lhs_ptrs < rhs_ptrs) && ...);
         }
 
-        constexpr friend bool operator>(const basic_iterator &lhs, const basic_iterator &rhs) {
+        constexpr friend bool operator>(const basic_iterator& lhs, const basic_iterator& rhs) {
             auto [... lhs_ptrs] = lhs.ptrs_;
             auto [... rhs_ptrs] = rhs.ptrs_;
             return ((lhs_ptrs > rhs_ptrs) && ...);
         }
 
-        constexpr friend bool operator>=(const basic_iterator &lhs, const basic_iterator &rhs) {
+        constexpr friend bool operator>=(const basic_iterator& lhs, const basic_iterator& rhs) {
             return lhs > rhs || lhs == rhs;
         }
 
-        constexpr friend bool operator<=(const basic_iterator &lhs, const basic_iterator &rhs) {
+        constexpr friend bool operator<=(const basic_iterator& lhs, const basic_iterator& rhs) {
             return lhs < rhs || lhs == rhs;
         }
 
@@ -349,7 +349,7 @@ struct split_buffer {
     constexpr auto get_field_span() {
         auto [... ptrs] = pointers_;
         auto tuple_pointers = std::make_tuple(ptrs...);
-        FieldType *front_cap_ptr = std::get<FieldType>(tuple_pointers);
+        FieldType* front_cap_ptr = std::get<FieldType>(tuple_pointers);
         return std::span(front_cap_ptr + begin_offset_, size_);
     }
 
@@ -357,7 +357,7 @@ struct split_buffer {
     constexpr auto get_field_span() const {
         auto [... ptrs] = pointers_;
         auto tuple_pointers = std::make_tuple(ptrs...);
-        const FieldType *front_cap_ptr = std::get<FieldType>(tuple_pointers);
+        const FieldType* front_cap_ptr = std::get<FieldType>(tuple_pointers);
         return std::span(front_cap_ptr + begin_offset_, size_);
     }
 
@@ -365,7 +365,7 @@ struct split_buffer {
     constexpr auto get_field_span() {
         auto [... ptrs] = pointers_;
         auto tuple_pointers = std::make_tuple(ptrs...);
-        auto *front_cap_ptr = std::get<N>(tuple_pointers);
+        auto* front_cap_ptr = std::get<N>(tuple_pointers);
         return std::span(front_cap_ptr + begin_offset_, size_);
     }
 
@@ -373,7 +373,7 @@ struct split_buffer {
     constexpr auto get_field_span() const {
         auto [... ptrs] = pointers_;
         auto tuple_pointers = std::make_tuple(ptrs...);
-        const auto *front_cap_ptr = std::get<N>(tuple_pointers);
+        const auto* front_cap_ptr = std::get<N>(tuple_pointers);
         return std::span(front_cap_ptr + begin_offset_, size_);
     }
 
@@ -448,8 +448,8 @@ struct split_buffer {
      * @param raw_mem Starting address of the allocated memory on the heap.
      * @param capacity
      */
-    constexpr void set_pointers(std::byte *raw_mem, size_type capacity) {
-        raw_memory_ = reinterpret_cast<StorageBlock *>(raw_mem);
+    constexpr void set_pointers(std::byte* raw_mem, size_type capacity) {
+        raw_memory_ = reinterpret_cast<StorageBlock*>(raw_mem);
         const auto member_offsets = calculate_member_offsets<T>(capacity);
         std::size_t i = 0;
         template for (constexpr auto ptr_member : ptr_members) {
@@ -459,8 +459,8 @@ struct split_buffer {
     }
 
     template <typename... MemberTypes>
-    constexpr void construct_at_helper(auto tuple_ptrs, MemberTypes &&...member_values) {
-        SOAVecElementConstructionTransaction<Allocator, MemberTypes &&...> elementTxn(
+    constexpr void construct_at_helper(auto tuple_ptrs, MemberTypes&&... member_values) {
+        SOAVecElementConstructionTransaction<Allocator, MemberTypes&&...> elementTxn(
             tuple_ptrs, alloc_, std::forward<MemberTypes>(member_values)...);
         elementTxn.construct();
     }
@@ -560,7 +560,7 @@ struct split_buffer {
     }
 
     template <typename... Args>
-    void emplace_back(Args &&...args) {
+    void emplace_back(Args&&... args) {
         if (back_spare() == 0) {
             if (front_spare() > 0) {
                 size_t diff = front_spare();
@@ -599,7 +599,7 @@ struct split_buffer {
      * @param lhs
      * @param rhs
      */
-    friend void swap(split_buffer &lhs, split_buffer &rhs) noexcept {
+    friend void swap(split_buffer& lhs, split_buffer& rhs) noexcept {
         using std::swap;
         swap(lhs.raw_memory_, rhs.raw_memory_);
         swap(lhs.pointers_, rhs.pointers_);
@@ -635,7 +635,7 @@ struct split_buffer {
      *
      * @param capacity The user-requested capacity for the container.
      */
-    constexpr std::byte *allocate_memory(size_t capacity) {
+    constexpr std::byte* allocate_memory(size_t capacity) {
         static constexpr size_t alignment = alignof(T);
         size_t nbytes = calculate_allocation_size<T>(capacity);
 
@@ -645,12 +645,12 @@ struct split_buffer {
 
         byte_allocator_type byte_allocator(alloc_);
         size_t num_blocks = (nbytes + alignment - 1) / alignment;
-        StorageBlock *block_ptr = traits::allocate(byte_allocator, num_blocks);
+        StorageBlock* block_ptr = traits::allocate(byte_allocator, num_blocks);
         // std::println("Allocated {} bytes from {} to {}",
         //              num_blocks * sizeof(StorageBlock),
         //              raw_memory_,
         //              raw_memory_ + (num_blocks * sizeof(StorageBlock)));
-        return reinterpret_cast<std::byte *>(block_ptr);
+        return reinterpret_cast<std::byte*>(block_ptr);
     }
 
     constexpr void deallocate_memory() {
@@ -685,7 +685,7 @@ struct split_buffer {
         ASSERT_ARGUMENT_WITHIN_DOMAIN(capacity > 0, "The capacity must be greater than 0");
         ASSERT_ARGUMENT_WITHIN_DOMAIN(begin_offset >= 0 && begin_offset < capacity,
                                       "Cannot have a start point outside the capacity");
-        std::byte *raw_mem = allocate_memory(capacity);
+        std::byte* raw_mem = allocate_memory(capacity);
         set_pointers(raw_mem, capacity);
         set_valid_range(begin_offset, 0);
     }
@@ -710,7 +710,7 @@ private:
     template <typename SourceIterator>
     constexpr void construct_at_unchecked_helper(iterator dest_iter, SourceIterator src_iter) {
         auto [... member_ptrs] = dest_iter.ptrs_;
-        auto &[... member_values] = *src_iter;
+        auto& [... member_values] = *src_iter;
         // RAII guard that provides that offers strong exception safety, when
         // constructing a single T element, in the member declaration order.
         construct_at_helper(std::tuple(member_ptrs...), member_values...);
@@ -727,7 +727,7 @@ private:
         auto [... member_ptrs] = dest_iter.ptrs_;
         // *src_iter is an xvalue, so we need auto&& here: auto& cannot bind to
         // it.
-        auto &&[... member_values] = *src_iter;
+        auto&& [... member_values] = *src_iter;
         // Structured bindings are lvalues even when bound to an rvalue, so each
         // member must be explicitly moved.
         construct_at_helper(std::tuple(member_ptrs...), std::move(member_values)...);
@@ -742,7 +742,7 @@ private:
      */
     constexpr void copy_construct_at_unchecked(iterator dest_iter, const_reference src_value) {
         auto [... member_ptrs] = dest_iter.ptrs_;
-        auto &[... member_values] = src_value;
+        auto& [... member_values] = src_value;
         construct_at_helper(std::tuple(member_ptrs...), member_values...);
     }
 
@@ -753,9 +753,9 @@ private:
      * @param dest_iter
      * @param src_value
      */
-    constexpr void move_construct_at_unchecked(iterator dest_iter, T &&src_value) {
+    constexpr void move_construct_at_unchecked(iterator dest_iter, T&& src_value) {
         auto [... member_ptrs] = dest_iter.ptrs_;
-        auto &[... member_values] = src_value;
+        auto& [... member_values] = src_value;
         construct_at_helper(std::tuple(member_ptrs...), std::move(member_values)...);
     }
 
@@ -768,7 +768,7 @@ private:
      * @param args
      */
     template <typename... Args>
-    constexpr void emplace_at_unchecked(iterator dest_iter, Args &&...args) {
+    constexpr void emplace_at_unchecked(iterator dest_iter, Args&&... args) {
         auto [... member_ptrs] = dest_iter.ptrs_;
         construct_at_helper(std::tuple(member_ptrs...), std::forward<Args>(args)...);
     }
