@@ -66,14 +66,6 @@ struct split_buffer {
     struct References;
     struct ConstReferences;
 
-    /*
-    struct References : ReferencesBase {
-        References &operator=(const T &value);
-        References *operator->();
-        bool operator==(const T &value) const;
-    };
-    */
-
     consteval {
         auto data_members = std::define_static_array(get_all_fields(^^T));
         define_aggregate(^^Pointers, data_members | std::views::transform([](std::meta::info member) {
@@ -101,11 +93,25 @@ struct split_buffer {
     static constexpr auto ref_members = define_static_array(get_all_fields(^^ReferencesBase));
     static constexpr auto const_ref_members = define_static_array(get_all_fields(^^ConstReferencesBase));
 
+    /**
+     * @brief References is a modifiable view into an element of the split_buffer.
+     * @details References is a proxy for a `T` object. If you access elements of the split_buffer container
+     * using an index, e.g. split_buf[2], or dereference an iterator e.g. *it, these operations return an object of type
+     * `References` rather than `T&`. The members of this struct are references to the members of the value_type. So, a
+     * `References` object behaves like a `T&`.
+     */
     struct References : ReferencesBase {
 
         template <typename... Args>
         References(Args&... args) : ReferencesBase{args...} {}
 
+        /**
+         * @brief Mutator method. If you hold a reference to an element of the split_buffer, this method is invoked when
+         * assigning a value to the reference.
+         *
+         * @param value
+         * @return References&
+         */
         References& operator=(const T& value) {
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                 this->[:ref_members[I]:] = value.[:members[I]:];
@@ -113,10 +119,29 @@ struct split_buffer {
             return *this;
         }
 
+        References& operator=(T&& value) {
+            template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
+                this->[:ref_members[I]:] = std::move(value.[:members[I]:]);
+            }
+            return *this;
+        }
+
+        References& operator=(References value) {
+            template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
+                this->[:ref_members[I]:] = std::move(value.[:ref_members[I]:]);
+            }
+            return *this;
+        }
+
+        /**
+         * @brief Arrow operator.
+         *
+         * @return References*
+         */
         References* operator->() { return this; }
 
         /**
-         * @brief Comparison operator
+         * @brief Equality comparison operator. Performs a member-wise comparison.
          *
          * @param value
          * @return true
@@ -130,10 +155,17 @@ struct split_buffer {
             return isEqual;
         }
 
-        bool operator==(References other) const {
+        /**
+         * @brief Equality comparison operator. Performs a member-wise comparison.
+         *
+         * @param value
+         * @return true
+         * @return false
+         */
+        bool operator==(References value) const {
             bool isEqual{true};
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
-                isEqual &= (this->[:ref_members[I]:] == other.[:ref_members[I]:]);
+                isEqual &= (this->[:ref_members[I]:] == value.[:ref_members[I]:]);
             }
             return isEqual;
         }
