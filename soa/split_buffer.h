@@ -667,6 +667,8 @@ struct split_buffer {
             copy_construct_from_iterator_unchecked(dest_iter, src_iter);
             new_buf.set_sentinel(++new_buf_size);
         }
+        // The new_buf destructor will cleanup after, when it goes out of scope and the old
+        // data is destroyed.
         swap(*this, new_buf);
     }
 
@@ -754,15 +756,18 @@ struct split_buffer {
     constexpr void clear() { destruct_from_end_to(begin()); }
 
     /**
-     * @brief Helper function that calculates the allocation size and obtains
-     *.memory on the heap large enough to hold capacity elements of type T in
-     * SoA fashion, and returns a handle to this block.
+     * @brief Allocates uninitialized storage large enough to hold `num_elements` objects of type `T` laid out as one
+     * sub-array per data member.
      *
-     * @param capacity The user-requested capacity for the container.
+     * @details num_elements counts `T` elements, not bytes. The byte size of the allocation is derived from it, by
+     * `calculate_allocation_size<T>(num_elements)`: room for `num_elements` values for each member, plus any padding
+     * needed to align each sub-array.
+     *
+     * @param num_elements The user-requested capacity for the container in units of number of T elements.
      */
-    constexpr std::byte* allocate_memory(size_t capacity) {
+    constexpr std::byte* allocate_memory(size_t num_elements) {
         static constexpr size_t alignment = alignof(T);
-        size_t nbytes = calculate_allocation_size<T>(capacity);
+        size_t nbytes = calculate_allocation_size<T>(num_elements);
 
         // Rebind the allocator
         using traits = typename std::allocator_traits<Allocator>::template rebind_traits<StorageBlock>;
@@ -813,7 +818,7 @@ struct split_buffer {
      */
     constexpr ~split_buffer() {
         clear();
-        if (raw_memory_) {
+        if (raw_memory_ != nullptr) {
             deallocate_memory();
             raw_memory_ = nullptr;
         }
