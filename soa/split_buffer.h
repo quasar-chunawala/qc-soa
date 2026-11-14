@@ -102,12 +102,17 @@ struct split_buffer {
      */
     struct References : ReferencesBase {
 
+        /**
+         * @brief Construct a new References object from a pack of reference to args.
+         *
+         * @tparam Args
+         * @param args
+         */
         template <typename... Args>
         References(Args&... args) : ReferencesBase{args...} {}
 
         /**
-         * @brief Mutator method. If you hold a reference to an element of the split_buffer, this method is invoked when
-         * assigning a value to the reference.
+         * @brief Mutator method, used when user tries to copy-assign to an element of the buffer.
          *
          * @param value
          * @return References&
@@ -119,6 +124,12 @@ struct split_buffer {
             return *this;
         }
 
+        /**
+         * @brief Mutator method, used when user tries to move-assign to an element of the buffer.
+         *
+         * @param value
+         * @return References&
+         */
         References& operator=(T&& value) {
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                 this->[:ref_members[I]:] = std::move(value.[:members[I]:]);
@@ -126,7 +137,26 @@ struct split_buffer {
             return *this;
         }
 
-        References& operator=(References value) {
+        /**
+         * @brief Copy-assignment operator.
+         *
+         * @param value
+         * @return References&
+         */
+        References& operator=(const References& value) {
+            template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
+                this->[:ref_members[I]:] = (value.[:ref_members[I]:]);
+            }
+            return *this;
+        }
+
+        /**
+         * @brief Move-assignment operator.
+         *
+         * @param value
+         * @return References&
+         */
+        References& operator=(References&& value) {
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                 this->[:ref_members[I]:] = std::move(value.[:ref_members[I]:]);
             }
@@ -141,7 +171,7 @@ struct split_buffer {
         References* operator->() { return this; }
 
         /**
-         * @brief Equality comparison operator. Performs a member-wise comparison.
+         * @brief Equality comparison with a T. Performs a member-wise comparison.
          *
          * @param value
          * @return true
@@ -156,13 +186,13 @@ struct split_buffer {
         }
 
         /**
-         * @brief Equality comparison operator. Performs a member-wise comparison.
+         * @brief Equality comparison with another proxy object. Performs a member-wise comparison.
          *
          * @param value
          * @return true
          * @return false
          */
-        bool operator==(References value) const {
+        bool operator==(const References& value) const {
             bool isEqual{true};
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
                 isEqual &= (this->[:ref_members[I]:] == value.[:ref_members[I]:]);
@@ -185,7 +215,7 @@ struct split_buffer {
         ConstReferences* operator->() { return this; }
 
         /**
-         * @brief Comparison operator
+         * @brief Comparison to a T object.
          *
          * @param value
          * @return true
@@ -199,6 +229,13 @@ struct split_buffer {
             return isEqual;
         }
 
+        /**
+         * @brief Comparison to another proxy object.
+         *
+         * @param other
+         * @return true
+         * @return false
+         */
         bool operator==(ConstReferences other) const {
             bool isEqual{true};
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
@@ -209,8 +246,14 @@ struct split_buffer {
     };
 
     /**
-     * @brief StorageBlock type is used by the allocate_memory functions as a
-     * unit memory allocation.
+     * @brief The unit of allocation for the buffer's storage. One block is `alignof(T)` bytes and is aligned to
+     * `alignof(T)`.
+     *
+     * @details The split_buffer stores members of `T` in separate sub-arrays inside a single contiguous block of memory
+     * allocated on the heap. This block is requested as raw bytes, but it must start at an address that is suitably
+     * aligned for every member type. A standard std::byte allocation does not guarantee this.
+     *
+     * `StorageBlock`
      */
     struct alignas(T) StorageBlock {
         std::byte byte_array[alignof(T)];
@@ -377,22 +420,46 @@ struct split_buffer {
         return front_cap + begin_offset_ + size_;
     }
 
+    /**
+     * @brief Returns a modifiable view of a single member's values across all valid elements of
+     * the container.
+     *
+     * @details Because the buffer stores each member of `T` in its own contiguous sub-array,
+     * the values of one member of `T` can be directly exposed as a `std::span`. This method allows the user to specify
+     * the member by its type.
+     * @tparam FieldType The declared type of the member to view.
+     * @return constexpr auto
+     */
     template <typename FieldType>
     constexpr auto get_field_span() {
         auto [... ptrs] = pointers_;
         auto tuple_pointers = std::make_tuple(ptrs...);
-        FieldType* front_cap_ptr = std::get<FieldType>(tuple_pointers);
+        FieldType* front_cap_ptr = std::get<FieldType*>(tuple_pointers);
         return std::span(front_cap_ptr + begin_offset_, size_);
     }
 
+    /**
+     * @brief Accessor method that returns a read-only view of a single member's values across all valid elements stored
+     * in the container.
+     *
+     * @tparam FieldType The declared type of the member to view.
+     * @return constexpr auto
+     */
     template <typename FieldType>
     constexpr auto get_field_span() const {
         auto [... ptrs] = pointers_;
         auto tuple_pointers = std::make_tuple(ptrs...);
-        const FieldType* front_cap_ptr = std::get<FieldType>(tuple_pointers);
+        const FieldType* front_cap_ptr = std::get<FieldType*>(tuple_pointers);
         return std::span(front_cap_ptr + begin_offset_, size_);
     }
 
+    /**
+     * @brief Returns a modifiable view of a single member's values across all elements stored in the container.
+     *
+     * @details This method allows the user to specify the member by its index.
+     * @tparam N The index of the member to view.
+     * @return constexpr auto
+     */
     template <std::size_t N>
     constexpr auto get_field_span() {
         auto [... ptrs] = pointers_;
@@ -401,6 +468,12 @@ struct split_buffer {
         return std::span(front_cap_ptr + begin_offset_, size_);
     }
 
+    /**
+     * @brief Returns a read-only view of a single member's values across all valid elements stored in the container.
+     *
+     * @tparam N The index of the member to view.
+     * @return constexpr auto
+     */
     template <std::size_t N>
     constexpr auto get_field_span() const {
         auto [... ptrs] = pointers_;
@@ -454,9 +527,9 @@ struct split_buffer {
 
     constexpr void set_capacity(size_type new_capacity) { capacity_ = new_capacity; }
 
-    [[nodiscard]] constexpr std::size_t get_data() const { return begin_offset_; }
+    [[nodiscard]] constexpr std::size_t get_begin_offset() const { return begin_offset_; }
 
-    constexpr void set_data(size_type new_begin_offset_) { begin_offset_ = new_begin_offset_; }
+    constexpr void set_begin_offset(size_type new_begin_offset_) { begin_offset_ = new_begin_offset_; }
 
     constexpr void set_valid_range(size_type new_begin_offset, size_type new_size) {
         begin_offset_ = new_begin_offset;
@@ -678,10 +751,6 @@ struct split_buffer {
         byte_allocator_type byte_allocator(alloc_);
         size_t num_blocks = (nbytes + alignment - 1) / alignment;
         StorageBlock* block_ptr = traits::allocate(byte_allocator, num_blocks);
-        // std::println("Allocated {} bytes from {} to {}",
-        //              num_blocks * sizeof(StorageBlock),
-        //              raw_memory_,
-        //              raw_memory_ + (num_blocks * sizeof(StorageBlock)));
         return reinterpret_cast<std::byte*>(block_ptr);
     }
 
