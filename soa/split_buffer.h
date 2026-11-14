@@ -647,10 +647,17 @@ struct split_buffer {
      * *this is left unchanged.
      *
      */
-    constexpr void grow_and_relocate() {
+    constexpr void grow_and_relocate(size_t new_front_spare) {
+        ASSERT_ARGUMENT_WITHIN_DOMAIN(front_spare() == 0 && back_spare() == 0,
+                                      "There should be no spare capacity in the buffer");
+
         size_t old_capacity = capacity();
         size_t new_capacity = std::max({2 * old_capacity, 8uz});
-        split_buffer new_buf(new_capacity, 0);
+
+        CONTRACT_POSTCONDITION(capacity() == new_capacity,
+                               "The capacity() of the container should be updated new_capacity");
+
+        split_buffer new_buf(new_capacity, new_front_spare);
 
         auto dest_iter = new_buf.begin();
         auto src_iter = begin();
@@ -683,7 +690,7 @@ struct split_buffer {
 
         while (first != last) {
             if (!back_spare()) {
-                grow_and_relocate();
+                grow_and_relocate(0);
             }
             copy_construct_at_unchecked(end(), first);
             set_sentinel(size_ + 1);
@@ -703,7 +710,7 @@ struct split_buffer {
                 }
                 set_valid_range(begin() - diff, end() - diff);
             } else {
-                grow_and_relocate();
+                grow_and_relocate(0);
             }
         }
         emplace_at_unchecked(end(), std::forward<Args>(args)...);
