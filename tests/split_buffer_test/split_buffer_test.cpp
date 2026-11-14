@@ -178,15 +178,17 @@ TEST(SoaSplitBufferTest, DefaultConstructor) {
 }
 
 TEST(SoaSplitBufferTest, CapacityAndBeginOffsetConstructor) {
-    soa::detail::split_buffer<Vec3> split_buffer(1000, 250);
-    EXPECT_EQ(split_buffer.size(), 0);
-    EXPECT_EQ(split_buffer.capacity(), 1000);
+    soa::detail::split_buffer<Vec3> split_buf(1000, 250);
+    EXPECT_EQ(split_buf.size(), 0);
+    EXPECT_EQ(split_buf.capacity(), 1000);
+    EXPECT_EQ(split_buf.front_spare(), 250);
 }
 
 TEST(SoaSplitBufferTest, ConstructAtEndWithSizeTest) {
     soa::detail::split_buffer<Vec3> buf(1000, 250);
     EXPECT_EQ(buf.size(), 0);
     EXPECT_EQ(buf.capacity(), 1000);
+    EXPECT_EQ(buf.front_spare(), 250);
 
     Vec3 i_hat{.x_ = 1.0, .y_ = 0.0, .z_ = 0.0};
     buf.copy_construct_at_end_with_size(1, i_hat);
@@ -212,7 +214,7 @@ TEST(SoaSplitBufferTest, ConstructAtEndFromRangeTest) {
     std::vector<Vec3> points;
     points.reserve(100);
     for (auto i{0uz}; i < 100; ++i) {
-        points.push_back(Vec3{.x_ = dist(gen), .y_ = dist(gen), .z_ = dist(gen)});
+        points.push_back(Vec3{.x_ = 1.0 * i, .y_ = 2.0 * i, .z_ = 3.0 * i});
     }
 
     split_buf.copy_construct_at_end_with_size(points.begin(), points.end());
@@ -266,7 +268,7 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityTest) {
 
     std::vector<Vec3> vec;
     for (auto i{0uz}; i < 128; ++i) {
-        vec.push_back(Vec3(dist(gen), dist(gen), dist(gen)));
+        vec.push_back(Vec3(1.0 * i, 2.0 * i, 3.0 * i));
     }
 
     for (auto i{0uz}; i < 128; ++i) {

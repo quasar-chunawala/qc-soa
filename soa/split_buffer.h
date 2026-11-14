@@ -585,9 +585,9 @@ struct split_buffer {
      */
     template <typename... MemberTypes>
     constexpr void construct_members_at(auto tuple_ptrs, MemberTypes&&... member_values) {
-        SOAVecElementConstructionTransaction<Allocator, MemberTypes&&...> elementTxn(
+        ElementConstructionTransaction<Allocator, MemberTypes&&...> elementConstructionTransaction(
             tuple_ptrs, alloc_, std::forward<MemberTypes>(member_values)...);
-        elementTxn.construct();
+        elementConstructionTransaction.construct();
     }
 
     /**
@@ -607,9 +607,9 @@ struct split_buffer {
 
         // RAII wrapper that provides basic exception guarantee when
         // constructing value n times.
-        ConstructionTransaction txn(this, end(), n);
-        for (; txn.pos_ != txn.end_; ++txn.pos_) {
-            copy_construct_at_unchecked(txn.pos_, value);
+        ConstructionTransaction constructionTxn(this, end(), n);
+        for (; constructionTxn.pos_ != constructionTxn.end_; ++constructionTxn.pos_) {
+            copy_construct_at_unchecked(constructionTxn.pos_, value);
         }
         set_size(size_ + n);
     }
@@ -763,20 +763,24 @@ struct split_buffer {
      * `calculate_allocation_size<T>(num_elements)`: room for `num_elements` values for each member, plus any padding
      * needed to align each sub-array.
      *
+     * The request is rounded up to a whole number of `StorageBlock`s and served by the allocator rebound to
+     * `StorageBlock`. The returned address is therefore aligned to atleast `alignof(T)`.
+     *
      * @param num_elements The user-requested capacity for the container in units of number of T elements.
      */
     constexpr std::byte* allocate_memory(size_t num_elements) {
         static constexpr size_t alignment = alignof(T);
-        size_t nbytes = calculate_allocation_size<T>(num_elements);
+        size_t num_bytes = calculate_allocation_size<T>(num_elements);
 
         // Rebind the allocator
         using traits = typename std::allocator_traits<Allocator>::template rebind_traits<StorageBlock>;
-        using byte_allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<StorageBlock>;
+        using storage_block_allocator_type =
+            typename std::allocator_traits<Allocator>::template rebind_alloc<StorageBlock>;
 
-        byte_allocator_type byte_allocator(alloc_);
-        size_t num_blocks = (nbytes + alignment - 1) / alignment;
-        StorageBlock* block_ptr = traits::allocate(byte_allocator, num_blocks);
-        return reinterpret_cast<std::byte*>(block_ptr);
+        storage_block_allocator_type storage_block_allocator(alloc_);
+        size_t num_storage_blocks = (num_bytes + alignment - 1) / alignment;
+        StorageBlock* storage_block_ptr = traits::allocate(storage_block_allocator, num_storage_blocks);
+        return reinterpret_cast<std::byte*>(storage_block_ptr);
     }
 
     constexpr void deallocate_memory() {
@@ -785,11 +789,13 @@ struct split_buffer {
 
         // Rebind the allocator
         using traits = typename std::allocator_traits<Allocator>::template rebind_traits<StorageBlock>;
-        using byte_allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<StorageBlock>;
-        byte_allocator_type byte_allocator(alloc_);
-        size_t num_blocks = (nbytes + alignment - 1) / alignment;
+        using storage_block_allocator_type =
+            typename std::allocator_traits<Allocator>::template rebind_alloc<StorageBlock>;
 
-        traits::deallocate(byte_allocator, raw_memory_, num_blocks);
+        storage_block_allocator_type storage_block_allocator(alloc_);
+        size_t num_storage_blocks = (nbytes + alignment - 1) / alignment;
+
+        traits::deallocate(storage_block_allocator, raw_memory_, num_storage_blocks);
     }
 
     constexpr References operator[](size_t idx) { return *(begin() + idx); }
