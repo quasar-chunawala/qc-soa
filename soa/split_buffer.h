@@ -249,17 +249,27 @@ struct split_buffer {
      * @brief The unit of allocation for the buffer's storage. One block is `alignof(T)` bytes and is aligned to
      * `alignof(T)`.
      *
-     * @details The split_buffer stores members of `T` in separate sub-arrays inside a single contiguous block of memory
-     * allocated on the heap. This block is requested as raw bytes, but it must start at an address that is suitably
+     * @details The split_buffer stores members of `T` in separate sub-arrays inside a single contiguous blob of memory
+     * allocated on the heap. This blob is requested as raw bytes, but it must start at an address that is suitably
      * aligned for every member type. A standard std::byte allocation does not guarantee this.
      *
-     * `StorageBlock`
+     * `StorageBlock` solves this by being a byte-array that is aligned like `T`. The user's custom allocator is
+     * rebound to `StorageBlock`. Therefore, the rebound allocator returns storage aligned for `StorageBlock`, so
+     * the memory thus obtained is at an address which is a multiple of `alignof(T)`. That is enough for every
+     * data-member of `T`, because an aggregate's alignment is atleast that of each of its members.
+     *
+     * Each sub-array's offset within the buffer is computed separately by `calculate_member_offsets`.
      */
     struct alignas(T) StorageBlock {
+        // Raw storage of exactly `alignof(T)` bytes, so that the blocks tile
+        // contiguously without any padding.
         std::byte byte_array[alignof(T)];
     };
 
     Pointers pointers_{};
+    /**
+     * @brief The start of the allocation.
+     */
     StorageBlock* raw_memory_{nullptr};
     std::size_t begin_offset_{0};
     std::size_t size_{0};
@@ -563,8 +573,18 @@ struct split_buffer {
         set_capacity(capacity);
     }
 
+    /**
+     * @brief Constructs every member of a single T element, each at its own address.
+     *
+     * @details Each member is constructed in the declaration order from the matching value in `member_values`. If any
+     * member's constructor throws, the members built so far are destroyed before the exception propogates. The target
+     * storage is then left uninitialized, so this function either constructs the whole T element or nothing.
+     * @tparam MemberTypes
+     * @param tuple_ptrs A tuple of per-member addresses
+     * @param member_values A pack of member values.
+     */
     template <typename... MemberTypes>
-    constexpr void construct_at_helper(auto tuple_ptrs, MemberTypes&&... member_values) {
+    constexpr void construct_members_at(auto tuple_ptrs, MemberTypes&&... member_values) {
         SOAVecElementConstructionTransaction<Allocator, MemberTypes&&...> elementTxn(
             tuple_ptrs, alloc_, std::forward<MemberTypes>(member_values)...);
         elementTxn.construct();
@@ -614,9 +634,33 @@ struct split_buffer {
         ConstructionTransaction txn(this, end(), std::distance(first, last));
         auto src_iter{first};
         for (; txn.pos_ != txn.end_; ++txn.pos_, ++src_iter) {
-            construct_at_unchecked_helper(txn.pos_, src_iter);
+            copy_construct_from_iterator_unchecked(txn.pos_, src_iter);
         }
         set_size(size_ + std::distance(first, last));
+    }
+
+    /**
+     * @brief Moves the contents into a new larger allocation.
+     *
+     * @details Allocates a buffer with twice the current capacity (atleast 8) and relocates every element
+     * into it. If the relocation throws mid-way, the new buffer destroys the elements it has received, and
+     * *this is left unchanged.
+     *
+     */
+    constexpr void grow_and_relocate() {
+        size_t old_capacity = capacity();
+        size_t new_capacity = std::max({2 * old_capacity, 8uz});
+        split_buffer new_buf(new_capacity, 0);
+
+        auto dest_iter = new_buf.begin();
+        auto src_iter = begin();
+
+        size_t new_buf_size{0};
+        for (; src_iter != end(); ++src_iter, ++dest_iter) {
+            copy_construct_from_iterator_unchecked(dest_iter, src_iter);
+            new_buf.set_sentinel(++new_buf_size);
+        }
+        swap(*this, new_buf);
     }
 
     /**
@@ -639,24 +683,7 @@ struct split_buffer {
 
         while (first != last) {
             if (!back_spare()) {
-                // We ran out of back spare while reading the input stream.
-                size_t old_capacity = capacity();
-                size_t new_capacity = std::max({2 * old_capacity, 8uz});
-                split_buffer new_buf(new_capacity, 0);
-
-                auto dest_iter = new_buf.begin();
-                auto src_iter = begin();
-                // If the relocation throws mid-way, it guarantees that
-                // new_buf will be in a valid state. If an exception is thrown
-                // in the below for-loop block, if we exit the scope
-                // prematurely, new_buf will automatically clear its elements
-                // upon destruction.
-                size_t new_buf_size{0};
-                for (; src_iter != end(); ++src_iter, ++dest_iter) {
-                    construct_at_unchecked_helper(dest_iter, std::move_iterator<InputIterator>(src_iter));
-                    new_buf.set_sentinel(++new_buf_size);
-                }
-                swap(*this, new_buf);
+                grow_and_relocate();
             }
             copy_construct_at_unchecked(end(), first);
             set_sentinel(size_ + 1);
@@ -672,26 +699,11 @@ struct split_buffer {
                 diff = (diff + 1) / 2;
                 // Relocate [begin,end) to [begin-diff, end-diff)
                 for (iterator it{begin()}; it != end(); ++it) {
-                    construct_at_unchecked_helper(it - diff, std::move_iterator(it));
+                    copy_construct_from_iterator_unchecked(it - diff, it);
                 }
                 set_valid_range(begin() - diff, end() - diff);
             } else {
-                size_t old_capacity = capacity();
-                size_t new_capacity = std::max({2 * old_capacity, 8uz});
-                split_buffer new_buf(new_capacity, new_capacity / 4);
-                auto dest_iter = new_buf.begin();
-                auto src_iter = begin();
-                // If the relocation throws mid-way, it guarantees that
-                // new_buf will be in a valid state. If an exception is thrown
-                // in the below for-loop block, if we exit the scope
-                // prematurely, new_buf will automatically clear its elements
-                // upon destruction.
-                size_t new_buf_size{0};
-                for (; src_iter != end(); ++src_iter, ++dest_iter) {
-                    construct_at_unchecked_helper(dest_iter, std::move_iterator(src_iter));
-                    new_buf.set_sentinel(++new_buf_size);
-                }
-                swap(*this, new_buf);
+                grow_and_relocate();
             }
         }
         emplace_at_unchecked(end(), std::forward<Args>(args)...);
@@ -714,14 +726,15 @@ struct split_buffer {
     }
 
     /**
-     * @brief Destructs objects at new_end and onwards.
+     * @brief Destructs objects in the range [new_end, end).
      *
      * @param new_end
      */
-    constexpr void destruct_at_end(iterator new_end) {
+    constexpr void destruct_from_end_to(iterator new_end) {
         ASSERT_ARGUMENT_WITHIN_DOMAIN(new_end >= begin() && new_end <= end(), "new_last must in [begin(),end()]");
         CONTRACT_POSTCONDITION(size_ == new_end - begin(),
                                "The container size attribute must be updated to end() - begin()");
+        CONTRACT_POSTCONDITION(new_end == end(), "The sentinel must be updated to new_end");
         auto iter = end();
         while (iter != new_end) {
             --iter;
@@ -731,7 +744,7 @@ struct split_buffer {
         size_ = (new_end - begin());
     }
 
-    constexpr void clear() { destruct_at_end(begin()); }
+    constexpr void clear() { destruct_from_end_to(begin()); }
 
     /**
      * @brief Helper function that calculates the allocation size and obtains
@@ -765,10 +778,6 @@ struct split_buffer {
         size_t num_blocks = (nbytes + alignment - 1) / alignment;
 
         traits::deallocate(byte_allocator, raw_memory_, num_blocks);
-        // std::println("Deallocated {} bytes from {} to {}",
-        //              num_blocks * sizeof(StorageBlock),
-        //              raw_memory_,
-        //              raw_memory_ + (num_blocks * sizeof(StorageBlock)));
     }
 
     constexpr References operator[](size_t idx) { return *(begin() + idx); }
@@ -809,12 +818,13 @@ private:
      *        Selected when *src_iter is not an rvalue reference.
      */
     template <typename SourceIterator>
-    constexpr void construct_at_unchecked_helper(iterator dest_iter, SourceIterator src_iter) {
+        requires std::is_same_v<is_move_iterator_t<SourceIterator>, std::false_type>
+    constexpr void copy_construct_from_iterator_unchecked(iterator dest_iter, SourceIterator src_iter) {
         auto [... member_ptrs] = dest_iter.ptrs_;
-        auto& [... member_values] = *src_iter;
+        const auto& [... member_values] = *src_iter;
         // RAII guard that provides that offers strong exception safety, when
         // constructing a single T element, in the member declaration order.
-        construct_at_helper(std::tuple(member_ptrs...), member_values...);
+        construct_members_at(std::tuple(member_ptrs...), member_values...);
     }
 
     /**
@@ -824,14 +834,14 @@ private:
      */
     template <typename SourceIterator>
         requires std::is_same_v<is_move_iterator_t<SourceIterator>, std::true_type>
-    constexpr void construct_at_unchecked_helper(iterator dest_iter, SourceIterator src_iter) {
+    constexpr void move_construct_from_iterator_unchecked(iterator dest_iter, SourceIterator src_iter) {
         auto [... member_ptrs] = dest_iter.ptrs_;
         // *src_iter is an xvalue, so we need auto&& here: auto& cannot bind to
         // it.
         auto&& [... member_values] = *src_iter;
         // Structured bindings are lvalues even when bound to an rvalue, so each
         // member must be explicitly moved.
-        construct_at_helper(std::tuple(member_ptrs...), std::move(member_values)...);
+        construct_members_at(std::tuple(member_ptrs...), std::move(member_values)...);
     }
 
     /**
@@ -844,7 +854,7 @@ private:
     constexpr void copy_construct_at_unchecked(iterator dest_iter, const_reference src_value) {
         auto [... member_ptrs] = dest_iter.ptrs_;
         auto& [... member_values] = src_value;
-        construct_at_helper(std::tuple(member_ptrs...), member_values...);
+        construct_members_at(std::tuple(member_ptrs...), member_values...);
     }
 
     /**
@@ -857,7 +867,7 @@ private:
     constexpr void move_construct_at_unchecked(iterator dest_iter, T&& src_value) {
         auto [... member_ptrs] = dest_iter.ptrs_;
         auto& [... member_values] = src_value;
-        construct_at_helper(std::tuple(member_ptrs...), std::move(member_values)...);
+        construct_members_at(std::tuple(member_ptrs...), std::move(member_values)...);
     }
 
     /**
@@ -871,7 +881,7 @@ private:
     template <typename... Args>
     constexpr void emplace_at_unchecked(iterator dest_iter, Args&&... args) {
         auto [... member_ptrs] = dest_iter.ptrs_;
-        construct_at_helper(std::tuple(member_ptrs...), std::forward<Args>(args)...);
+        construct_members_at(std::tuple(member_ptrs...), std::forward<Args>(args)...);
     }
 };
 } // namespace soa::detail
