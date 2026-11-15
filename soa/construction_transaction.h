@@ -57,45 +57,47 @@ ConstructionTransaction<T, Alloc, Iterator>::~ConstructionTransaction() {
  * @brief ElementConstructionTransaction is an RAII class that guarantees
  * strong exception safety, when constructing an element in soa_split_buffer container.
  *
- * @tparam Allocator Custom Allocator
- * @tparam Args Member types of T
  */
 template <typename Allocator, typename... MemberTypes>
 struct ElementConstructionTransaction {
-    std::tuple<MemberTypes...> args_{};
-    std::tuple<std::remove_cvref_t<MemberTypes>*...> ptrs_{};
+    // std::tuple<MemberTypes&&...> args_;
+    std::tuple<std::remove_cvref_t<MemberTypes>*...> ptrs_;
     size_t num_elements_constructed{0};
     [[no_unique_address]] Allocator allocator_;
 
-    template <typename... ConstructorArgs>
-        requires(std::is_same_v<std::remove_cvref_t<ConstructorArgs>, std::remove_cvref_t<MemberTypes>> && ...)
-    ElementConstructionTransaction(std::tuple<std::remove_cvref_t<ConstructorArgs>*...> ptrs,
-                                   const Allocator& allocator, ConstructorArgs&&... args)
-        : args_(std::forward_as_tuple(std::forward<ConstructorArgs>(args)...)), ptrs_{ptrs}, allocator_{allocator} {}
+    constexpr ElementConstructionTransaction(std::tuple<MemberTypes*...> ptrs, const Allocator& allocator)
+        : ptrs_{ptrs}, allocator_{allocator} {}
 
+    ElementConstructionTransaction(const ElementConstructionTransaction&) = delete;
+    ElementConstructionTransaction& operator=(const ElementConstructionTransaction&) = delete;
+
+    /// Destroys the members constructed so far, in reverse order of construction.
     constexpr void destruct() {
-        return [&]<size_t... Indices>(std::index_sequence<Indices...>) {
+        [&]<size_t... Indices>(std::index_sequence<Indices...>) {
             (((Indices < num_elements_constructed) ? (std::destroy_at(std::get<Indices>(ptrs_)), 0) : 0), ...);
         }(std::make_index_sequence<sizeof...(MemberTypes)>{});
+        num_elements_constructed = 0;
     }
 
-    template <typename MemberType>
-    constexpr void construct_impl(MemberType&& arg, std::remove_cvref_t<MemberType>* ptr) {
-        std::construct_at(ptr, std::forward<MemberType>(arg));
+    template <typename Arg, typename Member>
+    constexpr void construct_impl(Arg&& arg, Member* ptr) {
+        std::construct_at(ptr, std::forward<Arg>(arg));
         ++num_elements_constructed;
     }
 
-    ~ElementConstructionTransaction() {
+    constexpr ~ElementConstructionTransaction() {
         if (num_elements_constructed < sizeof...(MemberTypes)) {
             destruct();
         }
     }
 
-    constexpr void construct() {
-        template for (constexpr int I : std::views::iota(0uz, sizeof...(MemberTypes))) {
-            construct_impl(std::forward<MemberTypes...[I]>(std::get<I>(args_)), std::get<I>(ptrs_));
+    template <typename... ConstructorArgs>
+    constexpr void construct(ConstructorArgs&&... args) {
+        template for (constexpr size_t I : std::views::iota(0uz, sizeof...(ConstructorArgs))) {
+            construct_impl(std::forward<ConstructorArgs...[I]>((args...[I])), std::get<I>(ptrs_));
         }
-    };
+    }
 };
+
 } // namespace soa::detail
 #endif

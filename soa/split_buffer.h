@@ -585,9 +585,8 @@ struct split_buffer {
      */
     template <typename... MemberTypes>
     constexpr void construct_members_at(auto tuple_ptrs, MemberTypes&&... member_values) {
-        ElementConstructionTransaction<Allocator, MemberTypes&&...> elementConstructionTransaction(
-            tuple_ptrs, alloc_, std::forward<MemberTypes>(member_values)...);
-        elementConstructionTransaction.construct();
+        ElementConstructionTransaction elementConstructionTransaction(tuple_ptrs, alloc_);
+        elementConstructionTransaction.construct(std::forward<MemberTypes>(member_values)...);
     }
 
     template <typename... MemberTypes>
@@ -866,9 +865,10 @@ private:
     constexpr void copy_construct_from_iterator_unchecked(iterator dest_iter, SourceIterator src_iter) {
         auto [... member_ptrs] = dest_iter.ptrs_;
         const auto& [... member_values] = *src_iter;
+        auto tup_ptrs = std::tuple(member_ptrs...);
         // RAII guard that provides that offers strong exception safety, when
         // constructing a single T element, in the member declaration order.
-        construct_members_at(std::tuple(member_ptrs...), member_values...);
+        construct_members_at(tup_ptrs, member_values...);
     }
 
     /**
@@ -883,9 +883,10 @@ private:
         // *src_iter is an xvalue, so we need auto&& here: auto& cannot bind to
         // it.
         auto&& [... member_values] = *src_iter;
+        auto tup_ptrs = std::tuple(std::tuple(member_ptrs...));
         // Structured bindings are lvalues even when bound to an rvalue, so each
         // member must be explicitly moved.
-        construct_members_at(std::tuple(member_ptrs...), std::move(member_values)...);
+        construct_members_at(tup_ptrs, std::move(member_values)...);
     }
 
     /**

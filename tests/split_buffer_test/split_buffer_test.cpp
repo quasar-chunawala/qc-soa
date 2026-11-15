@@ -357,3 +357,45 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityObjectTrackingTest) {
         EXPECT_EQ(vec[i], split_buf[i]);
     }
 }
+
+TEST(SoaSplitBufferTest, ThrowInElementConstructionTransactionTest) {
+    // ObjectTrackerArray is an aggregate type with 5 members.
+    struct ObjectTrackerArray {
+        ObjectTracker obj0_;
+        ObjectTracker obj1_;
+        ObjectTracker obj2_;
+        ObjectTracker obj3_;
+        ObjectTracker obj4_;
+    };
+
+    static_assert(sizeof(ObjectTrackerArray) == 5 * sizeof(ObjectTracker));
+    ObjectTracker* raw_mem = static_cast<ObjectTracker*>(operator new(sizeof(ObjectTrackerArray)));
+
+    std::vector<ObjectTracker> vec;
+    for (auto i{0}; i < 5; ++i) {
+        vec.push_back(ObjectTracker(i + 1));
+    }
+
+    // Pointer arithmetic on ObjectTracker* already steps in units of sizeof(ObjectTracker).
+    auto ptrs_tuple = std::tuple{raw_mem, raw_mem + 1, raw_mem + 2, raw_mem + 3, raw_mem + 4};
+
+    {
+        // This will force the ObjectTracker copy constructor to throw after 2 objects are built, when
+        // throw_countdown_ hits 0.
+        ObjectTracker::reset();
+        ObjectTracker::throw_countdown_ = 2;
+
+        soa::detail::ElementConstructionTransaction elementConstructionTxn(ptrs_tuple, std::allocator<ObjectTracker>{});
+
+        EXPECT_EQ(ObjectTracker::copies_, 0);
+
+        EXPECT_THROW(elementConstructionTxn.construct(vec[0], vec[1], vec[2], vec[3], vec[4]), std::runtime_error);
+        EXPECT_EQ(ObjectTracker::copies_, 2);
+        EXPECT_EQ(elementConstructionTxn.num_elements_constructed, 2u);
+        EXPECT_EQ(ObjectTracker::dtor_count_, 0); // rollback happens in the destructor, not in construct()
+    }
+
+    // The transaction went out of scope with only 2 of 5 members built, so it destroyed those 2.
+    EXPECT_EQ(ObjectTracker::dtor_count_, 2);
+    EXPECT_EQ(ObjectTracker::alive_, 0);
+}
