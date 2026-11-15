@@ -5,6 +5,7 @@
 #include <soa/split_buffer.h>
 #include <soa/utils.h>
 #include <stdexcept>
+#include <type_traits>
 
 namespace {
 template <std::size_t Size, std::size_t Align>
@@ -77,7 +78,10 @@ struct ObjectTracker {
         ++moves_;
     }
 
-    ~ObjectTracker() { --alive_; }
+    ~ObjectTracker() {
+        --alive_;
+        ++dtor_count_;
+    }
     bool operator==(const ObjectTracker& other) const = default;
     static void reset() {
         alive_ = copies_ = moves_ = dtor_count_ = 0;
@@ -91,6 +95,10 @@ struct ObjectsCollection {
 
     ObjectsCollection(int a, int b) : a_(a), b_(b) {}
     ObjectsCollection() : a_{0}, b_{0} {}
+    ObjectsCollection(const ObjectsCollection& other) = default;
+    ObjectsCollection(ObjectsCollection&&) noexcept = default;
+    ObjectsCollection& operator=(const ObjectsCollection&) = default;
+    ObjectsCollection& operator=(ObjectsCollection&&) noexcept = default;
 };
 
 static std::mt19937 gen(42);
@@ -282,7 +290,7 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityTest) {
     EXPECT_EQ(split_buf.size(), 128);
 }
 
-TEST(SoaSplitBufferTest, EmplaceBackObjectTrackingTest01) {
+TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
     ObjectsCollection coll(3, 4);
 
     // Reset count
@@ -291,15 +299,21 @@ TEST(SoaSplitBufferTest, EmplaceBackObjectTrackingTest01) {
     soa::detail::split_buffer<ObjectsCollection> split_buf(10, 6);
     EXPECT_EQ(split_buf.capacity(), 10);
     EXPECT_EQ(split_buf.size(), 0);
+    EXPECT_EQ(split_buf.front_spare(), 6);
+    EXPECT_EQ(split_buf.back_spare(), 4);
+
     split_buf.copy_construct_at_end_with_size(4, coll);
     EXPECT_EQ(split_buf.size(), 4);
+    EXPECT_EQ(split_buf.back_spare(), 0);
+    EXPECT_EQ(ObjectTracker::alive_, 8);
 
     split_buf.emplace_back(coll.a_, coll.b_);
     EXPECT_EQ(split_buf.size(), 5);
-    // TODO: When there is no back spare capacity, the current relocation logic in emplace_back
-    // doesn't properly handle destroying the [moved|copied]-from object.
-    // EXPECT_EQ(ObjectTracker::alive_, 10);
-    // EXPECT_EQ(ObjectTracker::moves_, 8);
-    // EXPECT_EQ(ObjectTracker::copies_, 10);
-    // EXPECT_EQ(ObjectTracker::dtor_count_, 8);
+    EXPECT_EQ(ObjectTracker::alive_, 10);
+
+    static_assert(std::is_nothrow_move_constructible_v<ObjectsCollection>);
+    EXPECT_EQ(ObjectTracker::moves_, 8);
+    EXPECT_EQ(ObjectTracker::dtor_count_, 8);
+
+    EXPECT_EQ(ObjectTracker::copies_, 10);
 }

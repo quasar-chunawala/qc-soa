@@ -72,7 +72,7 @@ struct ElementConstructionTransaction {
                                    const Allocator& allocator, ConstructorArgs&&... args)
         : args_(std::forward_as_tuple(std::forward<ConstructorArgs>(args)...)), ptrs_{ptrs}, allocator_{allocator} {}
 
-    constexpr void destroy() {
+    constexpr void destruct() {
         return [&]<size_t... Indices>(std::index_sequence<Indices...>) {
             (((Indices < num_elements_constructed) ? (std::destroy_at(std::get<Indices>(ptrs_)), 0) : 0), ...);
         }(std::make_index_sequence<sizeof...(MemberTypes)>{});
@@ -86,7 +86,7 @@ struct ElementConstructionTransaction {
 
     ~ElementConstructionTransaction() {
         if (num_elements_constructed < sizeof...(MemberTypes)) {
-            destroy();
+            destruct();
         }
     }
 

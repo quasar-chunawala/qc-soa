@@ -590,6 +590,18 @@ struct split_buffer {
         elementConstructionTransaction.construct();
     }
 
+    template <typename... MemberTypes>
+    constexpr void destruct_members_at(const std::tuple<MemberTypes*...>& member_ptrs) {
+        template for (constexpr size_t FieldIdx : std::views::iota(0uz, sizeof...(MemberTypes))) {
+            std::destroy_at(std::get<FieldIdx>(member_ptrs));
+        }
+    }
+
+    constexpr void destruct_members_at(iterator pos) {
+        auto [... ptrs] = pos.ptrs_;
+        destruct_members_at(std::make_tuple(ptrs...));
+    }
+
     /**
      * @brief Copy constructs n objects starting at end().
      *
@@ -700,17 +712,26 @@ struct split_buffer {
         }
     }
 
+    constexpr void shift_left_unchecked(size_t diff) {
+        // Relocate [begin,end) to [begin-diff, end-diff)
+        for (iterator it{begin()}; it != end(); ++it) {
+            move_construct_from_iterator_unchecked(it - diff, std::move_iterator<iterator>(it));
+            destruct_members_at(it);
+        }
+        set_valid_range(begin() - diff, end() - diff);
+    }
+
     template <typename... Args>
     void emplace_back(Args&&... args) {
         if (back_spare() == 0) {
             if (front_spare() > 0) {
-                size_t diff = front_spare();
-                diff = (diff + 1) / 2;
-                // Relocate [begin,end) to [begin-diff, end-diff)
-                for (iterator it{begin()}; it != end(); ++it) {
-                    copy_construct_from_iterator_unchecked(it - diff, it);
+                if constexpr ((std::is_nothrow_move_constructible_v<Args> && ...)) {
+                    size_t diff = front_spare();
+                    diff = (diff + 1) / 2;
+                    shift_left_unchecked(diff);
+                } else {
+                    grow_and_relocate(0);
                 }
-                set_valid_range(begin() - diff, end() - diff);
             } else {
                 grow_and_relocate(0);
             }
