@@ -676,7 +676,12 @@ struct split_buffer {
 
         size_t new_buf_size{0};
         for (; src_iter != end(); ++src_iter, ++dest_iter) {
-            copy_construct_from_iterator_unchecked(dest_iter, src_iter);
+            if constexpr (std::is_nothrow_move_constructible_v<T>) {
+                move_construct_from_iterator_unchecked(dest_iter, std::move_iterator<iterator>(src_iter));
+            } else {
+                copy_construct_from_iterator_unchecked(dest_iter, src_iter);
+            }
+
             new_buf.set_sentinel(++new_buf_size);
         }
         // The new_buf destructor will cleanup after, when it goes out of scope and the old
@@ -706,7 +711,7 @@ struct split_buffer {
             if (!back_spare()) {
                 grow_and_relocate(0);
             }
-            copy_construct_at_unchecked(end(), first);
+            copy_construct_at_unchecked(end(), *first);
             set_sentinel(size_ + 1);
             ++first;
         }

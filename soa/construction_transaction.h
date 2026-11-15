@@ -68,6 +68,7 @@ struct ElementConstructionTransaction {
     [[no_unique_address]] Allocator allocator_;
 
     template <typename... ConstructorArgs>
+        requires(std::is_same_v<std::remove_cvref_t<ConstructorArgs>, std::remove_cvref_t<MemberTypes>> && ...)
     ElementConstructionTransaction(std::tuple<std::remove_cvref_t<ConstructorArgs>*...> ptrs,
                                    const Allocator& allocator, ConstructorArgs&&... args)
         : args_(std::forward_as_tuple(std::forward<ConstructorArgs>(args)...)), ptrs_{ptrs}, allocator_{allocator} {}

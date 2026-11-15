@@ -61,7 +61,7 @@ struct ObjectTracker {
         }
     }
 
-    ObjectTracker(int v) : value_{v} {
+    explicit ObjectTracker(int v) : value_{v} {
         maybe_throw("Runtime exception in ObjectTracker(int)!");
         ++alive_;
     }
@@ -90,15 +90,10 @@ struct ObjectTracker {
 };
 
 struct ObjectsCollection {
-    ObjectTracker a_;
-    ObjectTracker b_;
+    ObjectTracker a_{0};
+    ObjectTracker b_{0};
 
-    ObjectsCollection(int a, int b) : a_(a), b_(b) {}
-    ObjectsCollection() : a_{0}, b_{0} {}
-    ObjectsCollection(const ObjectsCollection& other) = default;
-    ObjectsCollection(ObjectsCollection&&) noexcept = default;
-    ObjectsCollection& operator=(const ObjectsCollection&) = default;
-    ObjectsCollection& operator=(ObjectsCollection&&) noexcept = default;
+    ObjectsCollection(ObjectTracker a, ObjectTracker b) : a_(a), b_(b) {}
 };
 
 static std::mt19937 gen(42);
@@ -291,7 +286,11 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityTest) {
 }
 
 TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
-    ObjectsCollection coll(3, 4);
+    // ObjectsCollection coll(3, 4);
+    std::vector<ObjectsCollection> vec;
+    for (auto i{0}; i < 5; ++i) {
+        vec.push_back(ObjectsCollection(ObjectTracker(i), ObjectTracker(2 * i)));
+    }
 
     // Reset count
     ObjectTracker::reset();
@@ -302,18 +301,59 @@ TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
     EXPECT_EQ(split_buf.front_spare(), 6);
     EXPECT_EQ(split_buf.back_spare(), 4);
 
-    split_buf.copy_construct_at_end_with_size(4, coll);
+    split_buf.construct_at_end_with_sentinel(vec.begin(), vec.begin() + 4);
     EXPECT_EQ(split_buf.size(), 4);
+    EXPECT_GT(split_buf.front_spare(), 0);
     EXPECT_EQ(split_buf.back_spare(), 0);
     EXPECT_EQ(ObjectTracker::alive_, 8);
+    EXPECT_EQ(ObjectTracker::copies_, 8);
+    EXPECT_EQ(ObjectTracker::moves_, 0);
 
-    split_buf.emplace_back(coll.a_, coll.b_);
+    // As back_spare()==0, issuing an emplace_back will force the 4 elements at rear-end to be shifted to the front of
+    // the buffer. They are move constructed. Additionally, the 2 arguments to emplace_back are temporaries, so these
+    // are move constructed in place in the buffer. So, when the emplace_back completes, we expect the move-counter to
+    // equal 10.
+
+    split_buf.emplace_back(ObjectTracker(4), ObjectTracker(8));
     EXPECT_EQ(split_buf.size(), 5);
     EXPECT_EQ(ObjectTracker::alive_, 10);
 
     static_assert(std::is_nothrow_move_constructible_v<ObjectsCollection>);
-    EXPECT_EQ(ObjectTracker::moves_, 8);
-    EXPECT_EQ(ObjectTracker::dtor_count_, 8);
+    EXPECT_EQ(ObjectTracker::moves_, 10);
+    EXPECT_EQ(ObjectTracker::dtor_count_, 10);
 
-    EXPECT_EQ(ObjectTracker::copies_, 10);
+    for (auto i{0}; i < 5; ++i) {
+        EXPECT_EQ(vec[i], split_buf[i]);
+    }
+}
+
+TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityObjectTrackingTest) {
+    std::vector<ObjectsCollection> vec;
+    for (auto i{0}; i < 11; ++i) {
+        vec.push_back(ObjectsCollection(ObjectTracker(i), ObjectTracker(2 * i)));
+    }
+
+    // Reset count
+    ObjectTracker::reset();
+
+    soa::detail::split_buffer<ObjectsCollection> split_buf(10, 0);
+    EXPECT_EQ(split_buf.capacity(), 10);
+    EXPECT_EQ(split_buf.size(), 0);
+
+    split_buf.construct_at_end_with_sentinel(vec.begin(), vec.begin() + 10);
+    EXPECT_EQ(split_buf.size(), 10);
+    EXPECT_EQ(split_buf.size(), split_buf.capacity());
+    EXPECT_EQ(ObjectTracker::alive_, 20);
+
+    split_buf.emplace_back(ObjectTracker(10), ObjectTracker(20));
+    EXPECT_EQ(split_buf.size(), 11);
+    EXPECT_EQ(ObjectTracker::alive_, 22);
+
+    static_assert(std::is_nothrow_move_constructible_v<ObjectsCollection>);
+    EXPECT_EQ(ObjectTracker::moves_, 22);
+    EXPECT_EQ(ObjectTracker::dtor_count_, 22);
+
+    for (auto i{0uz}; i < 11; ++i) {
+        EXPECT_EQ(vec[i], split_buf[i]);
+    }
 }
