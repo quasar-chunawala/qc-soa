@@ -209,6 +209,29 @@ TEST(SoaSplitBufferTest, ConstructAtEndWithSizeTest) {
     EXPECT_EQ(buf[2], k_hat);
 }
 
+TEST(SoaSplitBufferTest, CopyConstructAtEndWithSentinelTest) {
+    soa::detail::split_buffer<Vec3> split_buf(1000, 250);
+    EXPECT_EQ(split_buf.size(), 0);
+    EXPECT_EQ(split_buf.capacity(), 1000);
+    EXPECT_EQ(split_buf.front_spare(), 250);
+    EXPECT_EQ(split_buf.back_spare(), 750);
+
+    std::vector<Vec3> vec;
+    for (auto i{0}; i < 500; ++i) {
+        vec.push_back(Vec3{.x_ = 1.0 * i, .y_ = 2.0 * i, .z_ = 3.0 * i});
+    }
+
+    split_buf.construct_at_end_with_sentinel(vec.begin(), vec.end());
+    EXPECT_EQ(split_buf.size(), 500);
+    EXPECT_EQ(split_buf.capacity(), 1000);
+    EXPECT_EQ(split_buf.front_spare(), 250);
+    EXPECT_EQ(split_buf.back_spare(), 250);
+
+    for (auto i{0}; i < 500; ++i) {
+        EXPECT_EQ(split_buf[i], vec[i]);
+    }
+}
+
 TEST(SoaSplitBufferTest, ConstructAtEndFromRangeTest) {
     soa::detail::split_buffer<Vec3> split_buf(1000, 250);
     EXPECT_EQ(split_buf.size(), 0);
@@ -359,17 +382,8 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityObjectTrackingTest) {
 }
 
 TEST(SoaSplitBufferTest, ThrowInElementConstructionTransactionTest) {
-    // ObjectTrackerArray is an aggregate type with 5 members.
-    struct ObjectTrackerArray {
-        ObjectTracker obj0_;
-        ObjectTracker obj1_;
-        ObjectTracker obj2_;
-        ObjectTracker obj3_;
-        ObjectTracker obj4_;
-    };
 
-    static_assert(sizeof(ObjectTrackerArray) == 5 * sizeof(ObjectTracker));
-    ObjectTracker* raw_mem = static_cast<ObjectTracker*>(operator new(sizeof(ObjectTrackerArray)));
+    ObjectTracker* raw_mem = static_cast<ObjectTracker*>(operator new(5 * sizeof(ObjectTracker)));
 
     std::vector<ObjectTracker> vec;
     for (auto i{0}; i < 5; ++i) {
@@ -399,3 +413,5 @@ TEST(SoaSplitBufferTest, ThrowInElementConstructionTransactionTest) {
     EXPECT_EQ(ObjectTracker::dtor_count_, 2);
     EXPECT_EQ(ObjectTracker::alive_, 0);
 }
+
+// TODO: Add tests for emplace_back when the constructor throws
