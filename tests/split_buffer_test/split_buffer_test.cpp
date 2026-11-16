@@ -414,12 +414,9 @@ TEST(SoaSplitBufferTest, ThrowInElementConstructionTransactionTest) {
         vec.push_back(ObjectTracker(i + 1));
     }
 
-    // Pointer arithmetic on ObjectTracker* already steps in units of sizeof(ObjectTracker).
     auto ptrs_tuple = std::tuple{raw_mem, raw_mem + 1, raw_mem + 2, raw_mem + 3, raw_mem + 4};
 
     {
-        // This will force the ObjectTracker copy constructor to throw after 2 objects are built, when
-        // throw_countdown_ hits 0.
         ObjectTracker::reset();
         ObjectTracker::throw_countdown_ = 2;
 
@@ -427,6 +424,14 @@ TEST(SoaSplitBufferTest, ThrowInElementConstructionTransactionTest) {
 
         EXPECT_EQ(ObjectTracker::copies_, 0);
 
+        // The ElementConstructionTransaction is an RAII wrapper that offers strong exception guarantee. It is
+        // initialized with a tuple of ptrs to memory locations. The .construct member function when invoked on
+        // `ElementConstructionTransaction` instance accepts a pack of arguments and copy/move constructs values in
+        // place at the range of address supplied earlier. The ObjectTracker is configured to throw after 2 invocations
+        // of the copy constructor. So, the below construct call copies vec[0], vec[1] and fails at vec[2]. Being an
+        // RAII wrapper, its destructor performs rollback and destroys 2 elements. Hence, it is strong-exception safe.
+        // So, we expect, that when `elementConstructionTransaction` goes out of scope, `ObjectTracker::copies_ = 2` and
+        // `ObjectTracker::dtor_count_ = 2`.
         EXPECT_THROW(elementConstructionTxn.construct(vec[0], vec[1], vec[2], vec[3], vec[4]), std::runtime_error);
         EXPECT_EQ(ObjectTracker::copies_, 2);
         EXPECT_EQ(elementConstructionTxn.num_elements_constructed, 2u);
