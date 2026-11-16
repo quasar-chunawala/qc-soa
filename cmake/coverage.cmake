@@ -27,6 +27,7 @@ if(LIBSOA_ENABLE_COVERAGE)
       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/coverage
       COMMAND ${GCOVR} -r ${CMAKE_SOURCE_DIR} --filter ${CMAKE_SOURCE_DIR}/soa
               --gcov-executable ${LIBSOA_GCOV_EXECUTABLE}
+              --exclude-throw-branches --exclude-unreachable-branches
               --lcov ${CMAKE_BINARY_DIR}/coverage.info
               --html-details ${CMAKE_BINARY_DIR}/coverage/index.html --print-summary
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}

@@ -89,6 +89,12 @@ struct ObjectTracker {
     }
 };
 
+struct ObjectTrackerNonMoveConstructible : ObjectTracker {
+    ObjectTrackerNonMoveConstructible(ObjectTrackerNonMoveConstructible&&) = delete;
+    ObjectTrackerNonMoveConstructible& operator=(ObjectTrackerNonMoveConstructible&&) = delete;
+    ObjectTrackerNonMoveConstructible(int v) : ObjectTracker(v) {}
+};
+
 struct ObjectsCollection {
     ObjectTracker a_{0};
     ObjectTracker b_{0};
@@ -308,8 +314,12 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityTest) {
     EXPECT_EQ(split_buf.size(), 128);
 }
 
+/**
+ * @brief Tests emplace_back(Args&&) when there is no capacity at the back,
+ * but there is capacity at the front.
+ *
+ */
 TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
-    // ObjectsCollection coll(3, 4);
     std::vector<ObjectsCollection> vec;
     for (auto i{0}; i < 5; ++i) {
         vec.push_back(ObjectsCollection(ObjectTracker(i), ObjectTracker(2 * i)));
@@ -333,9 +343,11 @@ TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
     EXPECT_EQ(ObjectTracker::moves_, 0);
 
     // As back_spare()==0, issuing an emplace_back will force the 4 elements at rear-end to be shifted to the front of
-    // the buffer. They are move constructed. Additionally, the 2 arguments to emplace_back are temporaries, so these
-    // are move constructed in place in the buffer. So, when the emplace_back completes, we expect the move-counter to
-    // equal 10.
+    // the buffer. Each element consists of two member objects that are move constructed, so this contributes 4 x 2 = 8
+    // moves. If no exception is thrown when shifting elements to the left, the moved-from elements are destructed,
+    // which sets dtor_count = 8. Finally, the 2 arguments to emplace_back are temporaries, so these are move
+    // constructed in place in the buffer and the temporary objects themselves are destructed. Thus, we expect
+    // `ObjectTracker::moves_=10` and `ObjectTracker::dtor_count_ = 10`.
 
     split_buf.emplace_back(ObjectTracker(4), ObjectTracker(8));
     EXPECT_EQ(split_buf.size(), 5);
@@ -350,6 +362,10 @@ TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
     }
 }
 
+/**
+ * @brief Tests emplace_back(Args&&) when there is no spare capacity in the buffer.
+ *
+ */
 TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityObjectTrackingTest) {
     std::vector<ObjectsCollection> vec;
     for (auto i{0}; i < 11; ++i) {
@@ -372,6 +388,14 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityObjectTrackingTest) {
     EXPECT_EQ(split_buf.size(), 11);
     EXPECT_EQ(ObjectTracker::alive_, 22);
 
+    // As there is no spare capacity in the buffer(size() == capacity()), a new allocation is requested,
+    // the existing elements are moved from the old buffer to the new allocation. Each element consists of two member
+    // objects that are move constructed, so this relocation results in 10 x 2 = 20 moves. If no exception is thrown,
+    // when relocating the elements, the pointers to the old buffer and the new allocation are swapped and scope is
+    // exited. When the old buffer goes out of scope, its destructor clears the buffer, destructs the contents of the
+    // old buffer, so the dtor_count equals 20. Lastly, the 2 arguments to emplace_back are temporaries, which are move
+    // constructed in place in the buffer and the temporaries are destroyed. Thus, when emplace_back completes, we
+    // expect `ObjectTracker::moves_=22` and `ObjectTracker::dtor_count_ = 22`.
     static_assert(std::is_nothrow_move_constructible_v<ObjectsCollection>);
     EXPECT_EQ(ObjectTracker::moves_, 22);
     EXPECT_EQ(ObjectTracker::dtor_count_, 22);
@@ -415,3 +439,4 @@ TEST(SoaSplitBufferTest, ThrowInElementConstructionTransactionTest) {
 }
 
 // TODO: Add tests for emplace_back when the constructor throws
+TEST(SoaSplitBufferTest, ThrowInEmplaceBackNoBackSpareCapacityTest) {}
