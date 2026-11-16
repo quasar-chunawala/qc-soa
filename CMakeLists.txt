@@ -35,5 +35,6 @@ option(ENABLE_CLANG_TIDY "" OFF)
 # #################################################################
 enable_testing()
 
+include(coverage)
 add_subdirectory(soa)
 add_subdirectory(tests)

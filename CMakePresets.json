@@ -123,11 +123,27 @@
             }
         },
         {
+            "name": "linux-gcc16-x64-coverage",
+            "inherits": "linux-gcc16-x64-debug",
+            "binaryDir": "${sourceDir}/build/linux-gcc16-x64-coverage",
+            "cacheVariables": {
+                "LIBSOA_ENABLE_COVERAGE": "ON"
+            }
+        },
+        {
             "name": "linux-gcc16-arm64-debug",
             "inherits": "linux-gcc-arm64-debug",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "g++16",
                 "CMAKE_C_COMPILER": "gcc16"
+            }
+        },
+        {
+            "name": "linux-gcc16-arm-coverage",
+            "inherits": "linux-gcc16-arm64-debug",
+            "binaryDir": "${sourceDir}/build/linux-gcc16-arm-coverage",
+            "cacheVariables": {
+                "LIBSOA_ENABLE_COVERAGE": "ON"
             }
         },
         {
@@ -215,8 +231,8 @@
             "configurePreset": "linux-gcc16-x64-debug"
         },
         {
-            "name": "linux-gcc16-arm64-debug",
-            "configurePreset": "linux-gcc16-arm64-debug"
+            "name": "linux-gcc16-x64-coverage",
+            "configurePreset": "linux-gcc16-x64-coverage"
         },
         {
             "name": "windows-gcc-x64-debug",
@@ -235,6 +251,13 @@
         {
             "name": "linux-gcc16-x64-debug",
             "configurePreset": "linux-gcc16-x64-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc16-x64-coverage",
+            "configurePreset": "linux-gcc16-x64-coverage",
             "output": {
                 "outputOnFailure": true
             }
