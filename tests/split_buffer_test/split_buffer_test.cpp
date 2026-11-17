@@ -89,17 +89,22 @@ struct ObjectTracker {
     }
 };
 
-struct ObjectTrackerNonMoveConstructible : ObjectTracker {
-    ObjectTrackerNonMoveConstructible(ObjectTrackerNonMoveConstructible&&) = delete;
-    ObjectTrackerNonMoveConstructible& operator=(ObjectTrackerNonMoveConstructible&&) = delete;
-    ObjectTrackerNonMoveConstructible(int v) : ObjectTracker(v) {}
+struct ThrowingMoveObjectTracker : ObjectTracker {
+    ThrowingMoveObjectTracker(int v) : ObjectTracker(v) {}
+
+    ThrowingMoveObjectTracker(const ThrowingMoveObjectTracker&) = default;
+    ThrowingMoveObjectTracker& operator=(const ThrowingMoveObjectTracker&) = default;
+
+    ThrowingMoveObjectTracker(ThrowingMoveObjectTracker&& other) : ObjectTracker(std::move(other)) {}
+    ThrowingMoveObjectTracker& operator=(ThrowingMoveObjectTracker&& other) {}
 };
 
-struct ObjectsCollection {
-    ObjectTracker a_{0};
-    ObjectTracker b_{0};
+template <typename T>
+struct Pair {
+    T a_{0};
+    T b_{0};
 
-    ObjectsCollection(ObjectTracker a, ObjectTracker b) : a_(a), b_(b) {}
+    Pair(T a, T b) : a_(a), b_(b) {}
 };
 
 static std::mt19937 gen(42);
@@ -320,15 +325,15 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityTest) {
  *
  */
 TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
-    std::vector<ObjectsCollection> vec;
+    std::vector<Pair<ObjectTracker>> vec;
     for (auto i{0}; i < 5; ++i) {
-        vec.push_back(ObjectsCollection(ObjectTracker(i), ObjectTracker(2 * i)));
+        vec.push_back(Pair(ObjectTracker(i), ObjectTracker(2 * i)));
     }
 
     // Reset count
     ObjectTracker::reset();
 
-    soa::detail::split_buffer<ObjectsCollection> split_buf(10, 6);
+    soa::detail::split_buffer<Pair<ObjectTracker>> split_buf(10, 6);
     EXPECT_EQ(split_buf.capacity(), 10);
     EXPECT_EQ(split_buf.size(), 0);
     EXPECT_EQ(split_buf.front_spare(), 6);
@@ -353,7 +358,7 @@ TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
     EXPECT_EQ(split_buf.size(), 5);
     EXPECT_EQ(ObjectTracker::alive_, 10);
 
-    static_assert(std::is_nothrow_move_constructible_v<ObjectsCollection>);
+    static_assert(std::is_nothrow_move_constructible_v<Pair<ObjectTracker>>);
     EXPECT_EQ(ObjectTracker::moves_, 10);
     EXPECT_EQ(ObjectTracker::dtor_count_, 10);
 
@@ -367,15 +372,15 @@ TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareObjectTrackingTest) {
  *
  */
 TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityObjectTrackingTest) {
-    std::vector<ObjectsCollection> vec;
+    std::vector<Pair<ObjectTracker>> vec;
     for (auto i{0}; i < 11; ++i) {
-        vec.push_back(ObjectsCollection(ObjectTracker(i), ObjectTracker(2 * i)));
+        vec.push_back(Pair(ObjectTracker(i), ObjectTracker(2 * i)));
     }
 
     // Reset count
     ObjectTracker::reset();
 
-    soa::detail::split_buffer<ObjectsCollection> split_buf(10, 0);
+    soa::detail::split_buffer<Pair<ObjectTracker>> split_buf(10, 0);
     EXPECT_EQ(split_buf.capacity(), 10);
     EXPECT_EQ(split_buf.size(), 0);
 
@@ -396,7 +401,7 @@ TEST(SoaSplitBufferTest, EmplaceBackNoSpareCapacityObjectTrackingTest) {
     // old buffer, so the dtor_count equals 20. Lastly, the 2 arguments to emplace_back are temporaries, which are move
     // constructed in place in the buffer and the temporaries are destroyed. Thus, when emplace_back completes, we
     // expect `ObjectTracker::moves_=22` and `ObjectTracker::dtor_count_ = 22`.
-    static_assert(std::is_nothrow_move_constructible_v<ObjectsCollection>);
+    static_assert(std::is_nothrow_move_constructible_v<Pair<ObjectTracker>>);
     EXPECT_EQ(ObjectTracker::moves_, 22);
     EXPECT_EQ(ObjectTracker::dtor_count_, 22);
 
@@ -443,5 +448,61 @@ TEST(SoaSplitBufferTest, ThrowInElementConstructionTransactionTest) {
     EXPECT_EQ(ObjectTracker::alive_, 0);
 }
 
-// TODO: Add tests for emplace_back when the constructor throws
-TEST(SoaSplitBufferTest, ThrowInEmplaceBackNoBackSpareCapacityTest) {}
+TEST(SoaSplitBufferTest, ThrowInEmplaceBackNoBackSpareCapacityTest) {
+    std::vector<Pair<ThrowingMoveObjectTracker>> vec;
+    for (auto i{0}; i < 5; ++i) {
+        ThrowingMoveObjectTracker fst(i);
+        ThrowingMoveObjectTracker snd(2 * i);
+        Pair pair(fst, snd);
+        vec.push_back(pair);
+    }
+
+    // Reset count
+    ObjectTracker::reset();
+
+    soa::detail::split_buffer<Pair<ThrowingMoveObjectTracker>> split_buf(10, 6);
+    EXPECT_EQ(split_buf.capacity(), 10);
+    EXPECT_EQ(split_buf.size(), 0);
+    EXPECT_EQ(split_buf.front_spare(), 6);
+    EXPECT_EQ(split_buf.back_spare(), 4);
+
+    split_buf.construct_at_end_with_sentinel(vec.begin(), vec.begin() + 4);
+    EXPECT_EQ(split_buf.size(), 4);
+    EXPECT_GT(split_buf.front_spare(), 0);
+    EXPECT_EQ(split_buf.back_spare(), 0);
+    EXPECT_EQ(ObjectTracker::alive_, 8);
+
+    // In the initial setup, 4 elements are copied from the vector<Pair<ThrowingMoveObjectTracker>> to
+    // the buffer. Since, each Pair<ThrowingMoveObjectTracker> element has 2 ThrowingMoveObjectTracker instances, we
+    // expect ObjectTracker::copies_ == 8, prior to the call to emplace_back(Args&&).
+    EXPECT_EQ(ObjectTracker::copies_, 8);
+    EXPECT_EQ(ObjectTracker::moves_, 0);
+
+    // Set the throw_countdown_ := 4. ThrowingMoveObjectTracker's has a non- noexcept move constructor.
+    // The [copy|move] constructors will throw after 4 invocations.
+    ObjectTracker::throw_countdown_ = 4;
+
+    // When user calls emplace_back(Args&&), if there is no back_spare() and the move constructor is not noexcept (it
+    // could potentially throw), the fallback is to perform a new allocation and copy the elements from the old buffer
+    // to the new allocation. Each Pair<ThrowingMoveObjectTracker> element in the buffer has 2 ThrowingMoveObjectTracker
+    // members, so when 2 elements are copied, the `ThrowingMoveObject`s copy constructor is invoked 4 times. Hence, we
+    // expect ObjectTracker::copies_ value to increase by 4, from its initial value. When the algorithm tries to copy
+    // the 3rd element Pair, it throws. The grow_and_relocate() member function uses an RAII wrapper called
+    // `ConstructionTransaction` which offers basic exception safety. It guarantees that, if emplace_back() throws the
+    // container is in a valid, yet unspecified state. So, the container is usable and has 4 valid elements - we expect
+    // ObjectTracker::alive_ == 8. Moreover, the new buffer is destroyed, when it goes out of scope and its destructor
+    // will clear any elements, so we exepect ObjectTracker::dtor_count_ == 4.
+    EXPECT_THROW(split_buf.emplace_back(vec[4].a_, vec[4].b_), std::runtime_error);
+    EXPECT_EQ(split_buf.size(), 4);
+    EXPECT_EQ(ObjectTracker::alive_, 8);
+
+    static_assert(!std::is_nothrow_move_constructible_v<ThrowingMoveObjectTracker>);
+    static_assert(std::is_move_constructible_v<ThrowingMoveObjectTracker>);
+
+    EXPECT_EQ(ObjectTracker::copies_, 12);
+    EXPECT_EQ(ObjectTracker::dtor_count_, 4);
+
+    for (auto i{0}; i < 4; ++i) {
+        EXPECT_EQ(vec[i], split_buf[i]);
+    }
+}

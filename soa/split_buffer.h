@@ -659,8 +659,7 @@ struct split_buffer {
      *
      */
     constexpr void grow_and_relocate(size_t new_front_spare) {
-        ASSERT_ARGUMENT_WITHIN_DOMAIN(front_spare() == 0 && back_spare() == 0,
-                                      "There should be no spare capacity in the buffer");
+        ASSERT_ARGUMENT_WITHIN_DOMAIN(back_spare() == 0, "There should be no back spare capacity in the buffer");
 
         size_t old_capacity = capacity();
         size_t new_capacity = std::max({2 * old_capacity, 8uz});
@@ -729,7 +728,7 @@ struct split_buffer {
     void emplace_back(Args&&... args) {
         if (back_spare() == 0) {
             if (front_spare() > 0) {
-                if constexpr ((std::is_nothrow_move_constructible_v<Args> && ...)) {
+                if constexpr (std::is_nothrow_move_constructible_v<T>) {
                     size_t diff = front_spare();
                     diff = (diff + 1) / 2;
                     shift_left_unchecked(diff);
