@@ -14,6 +14,7 @@
 #include <contracts/contract_assert.h>
 #include <soa/construction_transaction.h>
 #include <soa/utils.h>
+#include <utility>
 
 namespace soa::detail {
 template <typename Iterator>
@@ -724,8 +725,8 @@ struct split_buffer {
         set_valid_range(begin() - diff, end() - diff);
     }
 
-    template <typename... Args>
-    void emplace_back(Args&&... args) {
+    template <typename... MemberTypes>
+    constexpr void emplace_back_members(MemberTypes&&... member_values) {
         if (back_spare() == 0) {
             if (front_spare() > 0) {
                 if constexpr (std::is_nothrow_move_constructible_v<T>) {
@@ -739,8 +740,35 @@ struct split_buffer {
                 grow_and_relocate(0);
             }
         }
-        emplace_at_unchecked(end(), std::forward<Args>(args)...);
+        emplace_at_unchecked(end(), std::forward<MemberTypes>(member_values)...);
         set_sentinel(size_ + 1);
+    }
+
+    template <typename... Args>
+    consteval bool compare_arg_types_with_member_types() {
+        constexpr bool isEqualLength = sizeof...(Args) == members.size();
+
+        bool isIdenticalTypes{true};
+        constexpr std::array<std::meta::info, members.size()> arg_types_reflection{^^std::remove_cvref_t<Args>...};
+
+        for (auto i{0uz}; i < members.size(); ++i) {
+            auto r1 = arg_types_reflection[i];
+            auto r2 = type_of(members[i]);
+            isIdenticalTypes &= std::meta::is_same_type(r1, r2);
+        }
+        return isEqualLength && isIdenticalTypes;
+    }
+
+    template <typename... Args>
+        requires std::is_constructible_v<T, Args...>
+    constexpr void emplace_back(Args&&... args) {
+        if constexpr (compare_arg_types_with_member_types<Args...>()) {
+            emplace_back_members(std::forward<Args>(args)...);
+        } else {
+            T value(std::forward<Args>(args)...);
+            auto& [... mems] = value;
+            emplace_back_members(mems...);
+        }
     }
 
     /**
