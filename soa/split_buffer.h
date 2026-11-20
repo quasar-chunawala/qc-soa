@@ -646,7 +646,7 @@ struct split_buffer {
         ConstructionTransaction txn(this, end(), std::distance(first, last));
         auto src_iter{first};
         for (; txn.pos_ != txn.end_; ++txn.pos_, ++src_iter) {
-            copy_construct_from_iterator_unchecked(txn.pos_, src_iter);
+            construct_from_iterator_unchecked(txn.pos_, src_iter);
         }
         set_size(size_ + std::distance(first, last));
     }
@@ -676,9 +676,9 @@ struct split_buffer {
         size_t new_buf_size{0};
         for (; src_iter != end(); ++src_iter, ++dest_iter) {
             if constexpr (std::is_nothrow_move_constructible_v<T>) {
-                move_construct_from_iterator_unchecked(dest_iter, std::move_iterator<iterator>(src_iter));
+                construct_from_iterator_unchecked(dest_iter, std::move_iterator<iterator>(src_iter));
             } else {
-                copy_construct_from_iterator_unchecked(dest_iter, src_iter);
+                construct_from_iterator_unchecked(dest_iter, src_iter);
             }
 
             new_buf.set_sentinel(++new_buf_size);
@@ -719,7 +719,7 @@ struct split_buffer {
     constexpr void shift_left_unchecked(size_t diff) {
         // Relocate [begin,end) to [begin-diff, end-diff)
         for (iterator it{begin()}; it != end(); ++it) {
-            move_construct_from_iterator_unchecked(it - diff, std::move_iterator<iterator>(it));
+            construct_from_iterator_unchecked(it - diff, std::move_iterator<iterator>(it));
             destruct_members_at(it);
         }
         set_valid_range(begin() - diff, end() - diff);
@@ -792,7 +792,7 @@ struct split_buffer {
      * @param new_end
      */
     constexpr void destruct_from_end_to(iterator new_end) {
-        ASSERT_ARGUMENT_WITHIN_DOMAIN(new_end >= begin() && new_end <= end(), "new_last must in [begin(),end()]");
+        ASSERT_ARGUMENT_WITHIN_DOMAIN(new_end >= begin() && new_end <= end(), "new_last must be in [begin(),end()]");
         CONTRACT_POSTCONDITION(size_ == new_end - begin(),
                                "The container size attribute must be updated to end() - begin()");
         CONTRACT_POSTCONDITION(new_end == end(), "The sentinel must be updated to new_end");
@@ -803,6 +803,28 @@ struct split_buffer {
             (std::destroy_at(ptrs), ...);
         }
         size_ = (new_end - begin());
+    }
+
+    /**
+     * @brief Destroys objects in the range [begin(),new_begin)
+     *
+     * @param new_begin
+     * @return constexr
+     */
+    constexpr void destruct_from_begin_to(iterator new_begin) {
+        ASSERT_ARGUMENT_WITHIN_DOMAIN(new_begin >= begin() && new_begin <= end(),
+                                      "new_begin must be in [begin(), end()]");
+        CONTRACT_POSTCONDITION(size_ == end() - new_begin,
+                               "The container size attribute must be updated to end() - begin()");
+        CONTRACT_POSTCONDITION(begin() == new_begin, "The container begin() must be updated to new_begin");
+
+        iterator iter{begin()};
+        while (iter != new_begin) {
+            auto [... ptrs] = iter.ptrs_;
+            (std::destroy_at(ptrs), ...);
+            ++iter;
+        }
+        set_valid_range(iter, end());
     }
 
     constexpr void clear() { destruct_from_end_to(begin()); }
@@ -884,36 +906,23 @@ struct split_buffer {
 
 private:
     /**
-     * @brief Copy constructs the element *src_iter at dest_iter.
-     *        Selected when *src_iter is not an rvalue reference.
+     * @brief [Copy|Move] constructs the element *src_iter member-wise at dest_iter.
+     *
+     * @tparam SourceIterator
+     * @param dest_iter
+     * @param src_iter
      */
     template <typename SourceIterator>
-        requires std::is_same_v<is_move_iterator_t<SourceIterator>, std::false_type>
-    constexpr void copy_construct_from_iterator_unchecked(iterator dest_iter, SourceIterator src_iter) {
+    constexpr void construct_from_iterator_unchecked(iterator dest_iter, SourceIterator src_iter) {
         auto [... member_ptrs] = dest_iter.ptrs_;
-        const auto& [... member_values] = *src_iter;
         auto tup_ptrs = std::tuple(member_ptrs...);
-        // RAII guard that provides that offers strong exception safety, when
-        // constructing a single T element, in the member declaration order.
-        construct_members_at(tup_ptrs, member_values...);
-    }
-
-    /**
-     * @brief Move constructs the element *src_iter at dest_iter.
-     *        Selected when *src_iter is an rvalue reference, e.g. for
-     * std::move_iterator.
-     */
-    template <typename SourceIterator>
-        requires std::is_same_v<is_move_iterator_t<SourceIterator>, std::true_type>
-    constexpr void move_construct_from_iterator_unchecked(iterator dest_iter, SourceIterator src_iter) {
-        auto [... member_ptrs] = dest_iter.ptrs_;
-        // *src_iter is an xvalue, so we need auto&& here: auto& cannot bind to
-        // it.
-        auto&& [... member_values] = *src_iter;
-        auto tup_ptrs = std::tuple(std::tuple(member_ptrs...));
-        // Structured bindings are lvalues even when bound to an rvalue, so each
-        // member must be explicitly moved.
-        construct_members_at(tup_ptrs, std::move(member_values)...);
+        if constexpr (std::is_same_v<is_move_iterator_t<SourceIterator>, std::true_type>) {
+            auto&& [... member_values] = *src_iter;
+            construct_members_at(tup_ptrs, std::move(member_values)...);
+        } else {
+            const auto& [... member_values] = *src_iter;
+            construct_members_at(tup_ptrs, member_values...);
+        }
     }
 
     /**
