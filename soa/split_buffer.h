@@ -621,7 +621,7 @@ struct split_buffer {
         // constructing value n times.
         ConstructionTransaction constructionTxn(this, end(), n);
         for (; constructionTxn.pos_ != constructionTxn.end_; ++constructionTxn.pos_) {
-            copy_construct_at_unchecked(constructionTxn.pos_, value);
+            construct_at_unchecked(constructionTxn.pos_, value);
         }
         set_size(size_ + n);
     }
@@ -710,7 +710,7 @@ struct split_buffer {
             if (!back_spare()) {
                 grow_and_relocate(0);
             }
-            copy_construct_at_unchecked(end(), *first);
+            construct_at_unchecked(end(), *first);
             set_sentinel(size_ + 1);
             ++first;
         }
@@ -916,39 +916,27 @@ private:
     constexpr void construct_from_iterator_unchecked(iterator dest_iter, SourceIterator src_iter) {
         auto [... member_ptrs] = dest_iter.ptrs_;
         auto tup_ptrs = std::tuple(member_ptrs...);
+        auto&& [... member_values] = *src_iter;
         if constexpr (std::is_same_v<is_move_iterator_t<SourceIterator>, std::true_type>) {
-            auto&& [... member_values] = *src_iter;
             construct_members_at(tup_ptrs, std::move(member_values)...);
         } else {
-            const auto& [... member_values] = *src_iter;
             construct_members_at(tup_ptrs, member_values...);
         }
     }
 
     /**
-     * @brief This method is copy consructs T at the address specified by
+     * @brief This method is [copy|move] consructs T member-wise at the addresses specified per-member by the iterator
      * `dest_iter`.
      * @tparam ValueType
      * @param dest_iter
      * @param src_value
      */
-    constexpr void copy_construct_at_unchecked(iterator dest_iter, const_reference src_value) {
+    template <typename U>
+    //    requires std::is_same_v<T, U>
+    constexpr void construct_at_unchecked(iterator dest_iter, U&& src_value) {
         auto [... member_ptrs] = dest_iter.ptrs_;
-        auto& [... member_values] = src_value;
-        construct_members_at(std::tuple(member_ptrs...), member_values...);
-    }
-
-    /**
-     * @brief This method is move consructs T at the address specified by
-     * `dest_iter`.
-     * @tparam ValueType
-     * @param dest_iter
-     * @param src_value
-     */
-    constexpr void move_construct_at_unchecked(iterator dest_iter, T&& src_value) {
-        auto [... member_ptrs] = dest_iter.ptrs_;
-        auto& [... member_values] = src_value;
-        construct_members_at(std::tuple(member_ptrs...), std::move(member_values)...);
+        auto&& [... member_values] = src_value;
+        construct_members_at(std::tuple(member_ptrs...), std::forward_like<U>(member_values)...);
     }
 
     /**
