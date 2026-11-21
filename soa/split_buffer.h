@@ -110,7 +110,8 @@ struct split_buffer {
          * @param args
          */
         template <typename... Args>
-        References(Args&... args) : ReferencesBase{args...} {}
+        References(Args&... args)
+            : ReferencesBase{args...} {}
 
         /**
          * @brief Mutator method, used when user tries to copy-assign to an element of the buffer.
@@ -205,7 +206,8 @@ struct split_buffer {
     struct ConstReferences : ConstReferencesBase {
 
         template <typename... Args>
-        ConstReferences(Args&... args) : ConstReferencesBase{args...} {}
+        ConstReferences(Args&... args)
+            : ConstReferencesBase{args...} {}
 
         ConstReferences(const References& other) {
             template for (constexpr size_t I : std::views::iota(0uz, members.size())) {
@@ -726,6 +728,31 @@ struct split_buffer {
     }
 
     template <typename... MemberTypes>
+    constexpr void emplace_front_members(MemberTypes&&... member_values) {
+        if (front_spare() == 0) {
+            if (back_spare() > 0) {
+                if constexpr (std::is_nothrow_move_constructible_v<T>) {
+                    size_t diff = back_spare();
+                    diff = (diff + 1) / 2;
+                    // shift_right_unchecked(diff);
+                } else {
+                    grow_and_relocate(capacity_ / 2);
+                }
+            } else {
+                grow_and_relocate(capacity_ / 2);
+            }
+        }
+        emplace_at_unchecked(begin() - 1, std::forward<MemberTypes>(member_values)...);
+        set_valid_range(begin_offset_ - 1, size_ + 1);
+    }
+
+    /**
+     * @brief Appends an element to the container.
+     *
+     * @tparam MemberTypes
+     * @param member_values One value per member of T.
+     */
+    template <typename... MemberTypes>
     constexpr void emplace_back_members(MemberTypes&&... member_values) {
         if (back_spare() == 0) {
             if (front_spare() > 0) {
@@ -761,6 +788,26 @@ struct split_buffer {
 
     template <typename... Args>
         requires std::is_constructible_v<T, Args...>
+    constexpr void emplace_front(Args&&... args) {
+        if constexpr (compare_arg_types_with_member_types<Args...>()) {
+            emplace_front_members(std::forward<Args>(args)...);
+        } else {
+            T value(std::forward<Args>(args)...);
+            auto& [... mems] = value;
+            emplace_front_members(mems...);
+        }
+    }
+
+    /**
+     * @brief Construct each of T element's members in place in the back spare capacity of the sub-arrays, one for each
+     * member in contigous storage.
+     *
+     * @tparam Args
+     * @param args
+     * @return requires constexpr
+     */
+    template <typename... Args>
+        requires std::is_constructible_v<T, Args...>
     constexpr void emplace_back(Args&&... args) {
         if constexpr (compare_arg_types_with_member_types<Args...>()) {
             emplace_back_members(std::forward<Args>(args)...);
@@ -786,6 +833,14 @@ struct split_buffer {
         swap(lhs.capacity_, rhs.capacity_);
     }
 
+    void copy_without_alloc(const split_buffer& other) noexcept {
+        raw_memory_ = other.raw_memory_;
+        pointers_ = other.pointers_;
+        begin_offset_ = other.begin_offset_;
+        size_ = other.size_;
+        capacity_ = other.capacity_;
+    }
+
     /**
      * @brief Destructs objects in the range [new_end, end).
      *
@@ -809,7 +864,6 @@ struct split_buffer {
      * @brief Destroys objects in the range [begin(),new_begin)
      *
      * @param new_begin
-     * @return constexr
      */
     constexpr void destruct_from_begin_to(iterator new_begin) {
         ASSERT_ARGUMENT_WITHIN_DOMAIN(new_begin >= begin() && new_begin <= end(),
@@ -890,6 +944,39 @@ struct split_buffer {
         std::byte* raw_mem = allocate_memory(capacity);
         set_pointers(raw_mem, capacity);
         set_valid_range(begin_offset, 0);
+    }
+
+    /**
+     * @brief Move constructor.
+     *
+     */
+    constexpr split_buffer(split_buffer&& other) noexcept
+        : raw_memory_{std::exchange(other.raw_memory_, nullptr)}
+        , pointers_{std::move(other.pointers_)}
+        , begin_offset_{std::exchange(other.begin_offset_, 0)}
+        , size_{std::exchange(other.size_, 0)}
+        , capacity_{std::exchange(other.capacity_, 0)} {
+        other.reset();
+    }
+
+    /**
+     * @brief Move assignment operator.
+     *
+     * @param other
+     * @return constexpr split_buffer&
+     */
+    constexpr split_buffer& operator=(split_buffer&& other) noexcept {
+        split_buffer temp{std::move(other)};
+        swap(*this, temp);
+        return *this;
+    }
+
+    constexpr void reset() {
+        raw_memory_ = nullptr;
+        template for (constexpr auto ptr_member : ptr_members) { pointers_.[:ptr_member:] = nullptr; }
+        set_begin_offset(0);
+        set_size(0);
+        set_capacity(0);
     }
 
     /**

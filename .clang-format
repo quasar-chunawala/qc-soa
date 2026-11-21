@@ -5,3 +5,5 @@ BreakTemplateDeclarations: Yes
 ColumnLimit: 120
 IndentWidth: 4
 PointerAlignment: Left
+PackConstructorInitializers: Never
+BreakConstructorInitializers: BeforeComma
