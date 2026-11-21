@@ -205,17 +205,17 @@ TEST(SoaSplitBufferTest, ConstructAtEndWithSizeTest) {
     EXPECT_EQ(buf.front_spare(), 250);
 
     Vec3 i_hat{.x_ = 1.0, .y_ = 0.0, .z_ = 0.0};
-    buf.copy_construct_at_end_with_size(1, i_hat);
+    buf.construct_at_end_with_size(1, i_hat);
     EXPECT_EQ(buf.size(), 1);
     EXPECT_EQ(buf[0], i_hat);
 
     Vec3 j_hat{.x_ = 0.0, .y_ = 1.0, .z_ = 0.0};
-    buf.copy_construct_at_end_with_size(1, j_hat);
+    buf.construct_at_end_with_size(1, j_hat);
     EXPECT_EQ(buf.size(), 2);
     EXPECT_EQ(buf[1], j_hat);
 
     Vec3 k_hat{.x_ = 0.0, .y_ = 0.0, .z_ = 1.0};
-    buf.copy_construct_at_end_with_size(1, k_hat);
+    buf.construct_at_end_with_size(1, k_hat);
     EXPECT_EQ(buf.size(), 3);
     EXPECT_EQ(buf[2], k_hat);
 }
@@ -254,7 +254,7 @@ TEST(SoaSplitBufferTest, ConstructAtEndFromRangeTest) {
         points.push_back(Vec3{.x_ = 1.0 * i, .y_ = 2.0 * i, .z_ = 3.0 * i});
     }
 
-    split_buf.copy_construct_at_end_with_size(points.begin(), points.end());
+    split_buf.construct_at_end_with_size(points.begin(), points.end());
     EXPECT_EQ(split_buf.size(), 100);
 
     for (auto i{0uz}; i < 100; ++i) {
@@ -287,7 +287,7 @@ TEST(SoaSplitBufferTest, EmplaceBackNoBackSpareCapacityTest) {
     EXPECT_EQ(split_buf.back_spare(), 1);
 
     Vec3 v = Vec3{.x_ = dist(gen), .y_ = dist(gen), .z_ = dist(gen)};
-    split_buf.copy_construct_at_end_with_size(1, v);
+    split_buf.construct_at_end_with_size(1, v);
     EXPECT_EQ(split_buf.size(), 1);
     EXPECT_EQ(split_buf.back_spare(), 0);
     EXPECT_EQ(split_buf.front_spare(), 4);
