@@ -610,7 +610,7 @@ struct split_buffer {
      * @post size() = old_size + n
      * @post [i] == value for all i in [size() - n, size())
      */
-    constexpr void copy_construct_at_end_with_size(size_type n, const_reference value) {
+    constexpr void construct_at_end_with_size(size_type n, const_reference value) {
         ASSERT_ARGUMENT_WITHIN_DOMAIN(n > 0, "The number of objects to construct n, must satisfy n > 0");
         ASSERT_ARGUMENT_WITHIN_DOMAIN(size() + n <= capacity(),
                                       "The container must have sufficient back spare capacity");
@@ -637,7 +637,7 @@ struct split_buffer {
      * @param last One past the end of the range.
      */
     template <std::forward_iterator ForwardIterator>
-    constexpr void copy_construct_at_end_with_size(ForwardIterator first, ForwardIterator last) {
+    constexpr void construct_at_end_with_size(ForwardIterator first, ForwardIterator last) {
         ASSERT_ARGUMENT_WITHIN_DOMAIN(last > first, "The number of objects to construct n, must satisfy n > 0");
         ASSERT_ARGUMENT_WITHIN_DOMAIN(size() + std::distance(first, last),
                                       "The container must have sufficient back spare capacity");
