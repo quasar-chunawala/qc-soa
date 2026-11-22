@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <random>
-#include <soa/construction_transaction.h>
 #include <soa/split_buffer.h>
 #include <soa/utils.h>
 #include <stdexcept>
@@ -61,18 +60,21 @@ struct ObjectTracker {
         }
     }
 
-    explicit ObjectTracker(int v) : value_{v} {
+    explicit ObjectTracker(int v)
+        : value_{v} {
         maybe_throw("Runtime exception in ObjectTracker(int)!");
         ++alive_;
     }
 
-    ObjectTracker(const ObjectTracker& other) : value_{other.value_} {
+    ObjectTracker(const ObjectTracker& other)
+        : value_{other.value_} {
         maybe_throw("Runtime exception in copy ctor!");
         ++copies_;
         ++alive_;
     }
 
-    ObjectTracker(ObjectTracker&& other) noexcept : value_{other.value_} {
+    ObjectTracker(ObjectTracker&& other) noexcept
+        : value_{other.value_} {
         other.value_ = -1;
         ++alive_;
         ++moves_;
@@ -90,12 +92,14 @@ struct ObjectTracker {
 };
 
 struct ThrowingMoveObjectTracker : ObjectTracker {
-    ThrowingMoveObjectTracker(int v) : ObjectTracker(v) {}
+    ThrowingMoveObjectTracker(int v)
+        : ObjectTracker(v) {}
 
     ThrowingMoveObjectTracker(const ThrowingMoveObjectTracker&) = default;
     ThrowingMoveObjectTracker& operator=(const ThrowingMoveObjectTracker&) = default;
 
-    ThrowingMoveObjectTracker(ThrowingMoveObjectTracker&& other) : ObjectTracker(std::move(other)) {}
+    ThrowingMoveObjectTracker(ThrowingMoveObjectTracker&& other)
+        : ObjectTracker(std::move(other)) {}
     ThrowingMoveObjectTracker& operator=(ThrowingMoveObjectTracker&& other) {}
 };
 
@@ -104,7 +108,9 @@ struct Pair {
     T a_{0};
     T b_{0};
 
-    Pair(T a, T b) : a_(a), b_(b) {}
+    Pair(T a, T b)
+        : a_(a)
+        , b_(b) {}
 };
 
 static std::mt19937 gen(42);
@@ -425,7 +431,8 @@ TEST(SoaSplitBufferTest, ThrowInElementConstructionTransactionTest) {
         ObjectTracker::reset();
         ObjectTracker::throw_countdown_ = 2;
 
-        soa::detail::ElementConstructionTransaction elementConstructionTxn(ptrs_tuple, std::allocator<ObjectTracker>{});
+        soa::detail::split_buffer_internal::ElementConstructionTransaction elementConstructionTxn(
+            ptrs_tuple, std::allocator<ObjectTracker>{});
 
         EXPECT_EQ(ObjectTracker::copies_, 0);
 

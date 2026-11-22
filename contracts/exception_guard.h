@@ -1,23 +1,41 @@
 #include <utility>
 
-/// An exception guard is a helper class for writing code with the strong exception guarantee. 
-/// When writing code that can throw an exception, we can store rollback instructions in an exception guard,
-// so it will be rolled back automatically. When an exception guard is done, we must mark it as complete, 
-/// so that the transaction is not rolled back, when the  guard is destroyed.
+/**
+ * @brief `exception_guard` is a helper class for writing code with  strong exception guarantee.
+ *
+ * When writing code that can throw an exception, once can store rollback instructions in an exception guard, so that if
+ * an exception is thrown at any point during the lifetime of the exception guard, it will be rolled back automatically.
+ * When the exception guard is done, one must mark it as being complete, so it isn't rolled back when the exception
+ * guard is destroyed.
+ *
+ * Exception guards are not default constructible, they cannot be copied or assigned to, but they can be moved around
+ * for convenience.
+ *
+ * @tparam Rollback
+ */
 template <typename Rollback>
-struct exception_guard{
+struct exception_guard {
     exception_guard() = delete;
-    exception_guard(Rollback&& rollback) 
-    : rollback_{ std::move(rollback) }
-    , complete_{ false }
-    {}
+    exception_guard(const exception_guard& other) = delete;
+    exception_guard& operator=(const exception_guard& other) = delete;
+    exception_guard& operator=(exception_guard&& other) = delete;
 
-    exception_guard(exception_guard&& other) noexcept
-    : rollback_{ std::move(other.rollback_) }
-    , complete_{ std::exchange(other.complete_, true) }
-    {}
+    constexpr exception_guard(Rollback&& rollback)
+        : rollback_{std::move(rollback)}
+        , complete_{false} {}
 
-    private:
+    constexpr exception_guard(exception_guard&& other) noexcept
+        : rollback_{std::move(other.rollback_)}
+        , complete_{std::exchange(other.complete_, true)} {}
+
+    constexpr void complete() { complete_ = true; }
+
+    constexpr ~exception_guard() {
+        if (!complete_) {
+            rollback_();
+        }
+    }
+
     Rollback rollback_;
     bool complete_;
 };

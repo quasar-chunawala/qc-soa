@@ -40,13 +40,13 @@
 // If the user does not configure the hardening level, default to
 // HARDENING_MODE_NONE
 #ifndef HARDENING_MODE
-	#define HARDENING_MODE HARDENING_MODE_NONE
+#define HARDENING_MODE HARDENING_MODE_NONE
 #endif
 
 // If the hardening level chosen by the user is invalid, error out
 #if HARDENING_MODE != HARDENING_MODE_NONE && HARDENING_MODE != HARDENING_MODE_FAST &&                                  \
     HARDENING_MODE != HARDENING_MODE_DEBUG
-	#error HARDENING_MODE must be set to one of the following values: \
+#error HARDENING_MODE must be set to one of the following values: \
 HARDENING_MODE_NONE, \
 HARDENING_MODE_FAST, \
 HARDENING_MODE_DEBUG
@@ -54,123 +54,120 @@ HARDENING_MODE_DEBUG
 
 // contract assert behavior (default: IO-logging and trap)
 #ifndef ASSERT_MODE_NONE
-	#define ASSERT_MODE_NONE 0
-	#define ASSERT_MODE_TRAP 1
-	#define ASSERT_MODE_LOG_TRAP 2
-	#define ASSERT_MODE_ABORT 3
-	#define ASSERT_MODE_LOG_ABORT 4
+#define ASSERT_MODE_NONE 0
+#define ASSERT_MODE_TRAP 1
+#define ASSERT_MODE_LOG_TRAP 2
+#define ASSERT_MODE_ABORT 3
+#define ASSERT_MODE_LOG_ABORT 4
 #endif
 
 #ifndef ASSERT_MODE
-	#define ASSERT_MODE ASSERT_MODE_LOG_TRAP // default assertion mode
+#define ASSERT_MODE ASSERT_MODE_LOG_TRAP // default assertion mode
 #else
-	#if (ASSERT_MODE > ASSERT_MODE_LOG_ABORT)
-		#undef ASSERT_MODE
-		#define ASSERT_MODE ASSERT_MODE_NONE
-	#endif
+#if (ASSERT_MODE > ASSERT_MODE_LOG_ABORT)
+#undef ASSERT_MODE
+#define ASSERT_MODE ASSERT_MODE_NONE
+#endif
 #endif
 
 // Definition of TRAP macro
 // __builtin_trap is a GCC + clang builtin
 #ifndef TRAP
-	#if __has_builtin(__builtin_trap) || defined(__GNUC__)
-		#define TRAP() __builtin_trap()
-	#elif defined(_MSC_VER)
-		// __debugbreak() alone doesn't mark the site as noreturn to
-		// the optimizer;
-		// __assume(false) tells MSVC that the control never returns
-		#define TRAP() (__debugbreak(), __assume(false))
-	#else
-		#define TRAP() std::abort()
-	#endif
+#if __has_builtin(__builtin_trap) || defined(__GNUC__)
+#define TRAP() __builtin_trap()
+#elif defined(_MSC_VER)
+// __debugbreak() alone doesn't mark the site as noreturn to
+// the optimizer;
+// __assume(false) tells MSVC that the control never returns
+#define TRAP() (__debugbreak(), __assume(false))
+#else
+#define TRAP() std::abort()
+#endif
 #endif
 
 namespace soa {
 
-	struct AssertViolation {
-		const char *expression_; // stringified condition
-		const char *comment_;    // user message
-		const char *file_name_;
-		int line_number_;
-		const char *category_;
+struct AssertViolation {
+    const char* expression_; // stringified condition
+    const char* comment_;    // user message
+    const char* file_name_;
+    int line_number_;
+    const char* category_;
 
-		[[nodiscard]] const char *expression() const { return expression_; }
-		[[nodiscard]] const char *file_name() const { return file_name_; }
+    [[nodiscard]] const char* expression() const { return expression_; }
+    [[nodiscard]] const char* file_name() const { return file_name_; }
 
-		[[nodiscard]] const char *comment() const { return comment_; }
+    [[nodiscard]] const char* comment() const { return comment_; }
 
-		[[nodiscard]] int line_number() const { return line_number_; }
+    [[nodiscard]] int line_number() const { return line_number_; }
 
-		[[nodiscard]] const char *category() const { return category_; }
-	};
+    [[nodiscard]] const char* category() const { return category_; }
+};
 
-	using ViolationHandler = void (*)(const AssertViolation &);
+using ViolationHandler = void (*)(const AssertViolation&);
 
 } // namespace soa
 
 // Definition of TRAP_WITH_MSG macro
 // __builtin_verbose_trap is clang only
 #ifndef TRAP_WITH_MSG
-	#if defined(__clang__) && defined(__has_builtin)
-		#if __has_builtin(__builtin_verbose_trap)
-			#if defined(__apple_build_version__) && __apple_build_version__ < 17000000
-				#define TRAP_WITH_MSG(tag, msg) __builtin_verbose_trap(tag ", " msg)
-			#else
-				#define TRAP_WITH_MSG(tag, msg) __builtin_verbose_trap(tag, msg)
-			#endif
-		#endif
-	#else
-		#define TRAP_WITH_MSG(tag, msg) TRAP()
-	#endif
+#if defined(__clang__) && defined(__has_builtin)
+#if __has_builtin(__builtin_verbose_trap)
+#if defined(__apple_build_version__) && __apple_build_version__ < 17000000
+#define TRAP_WITH_MSG(tag, msg) __builtin_verbose_trap(tag ", " msg)
+#else
+#define TRAP_WITH_MSG(tag, msg) __builtin_verbose_trap(tag, msg)
+#endif
+#endif
+#else
+#define TRAP_WITH_MSG(tag, msg) TRAP()
+#endif
 #endif
 
 #ifndef STRINGIFY
-	#define STRINGIFY_IMPL(x) #x
-	#define STRINGIFY(x) STRINGIFY_IMPL(x)
+#define STRINGIFY_IMPL(x) #x
+#define STRINGIFY(x) STRINGIFY_IMPL(x)
 #endif
 
 #define VIOLATION(cond, category, msg) ::soa::AssertViolation(#cond, msg, __FILE__, __LINE__, category)
 
 namespace soa {
-	struct Assert {
-		static void contract_fail_handler_default(const soa::AssertViolation &violation) {
-			std::fprintf(stderr,
-			             "%s:%d: contract violation: %s\n",
-			             violation.file_name(),
-			             violation.line_number(),
-			             violation.comment());
-			std::fflush(stderr);
-		}
+struct Assert {
+    static void contract_fail_handler_default(const soa::AssertViolation& violation) {
+        std::fprintf(stderr, "%s:%d: contract violation: %s\n", violation.file_name(), violation.line_number(),
+                     violation.comment());
+        std::fflush(stderr);
+    }
 
-		static void set_contract_fail_handler(ViolationHandler handler) { violationHandler = handler; }
+    static void set_contract_fail_handler(ViolationHandler handler) { violationHandler = handler; }
 
-		static void contract_fail_handler(const AssertViolation &violation) { (*violationHandler)(violation); }
+    static void contract_fail_handler(const AssertViolation& violation) { (*violationHandler)(violation); }
 
-	private:
-		static inline ViolationHandler violationHandler{&contract_fail_handler_default};
-	};
+private:
+    static inline ViolationHandler violationHandler{&contract_fail_handler_default};
+};
 } // namespace soa
 
 #if ASSERT_MODE == ASSERT_MODE_NONE
-	#define CONTRACT_ASSERT(cond, category, msg) ((void)0)
+#define CONTRACT_ASSERT(cond, category, msg) ((void)0)
 #elif ASSERT_MODE == ASSERT_MODE_TRAP
-	#define ON_FAILURE(cond, category, msg) TRAP()
+#define ON_FAILURE(cond, category, msg) TRAP()
 #elif ASSERT_MODE == ASSERT_MODE_LOG_TRAP
   // TODO : Implement LOG_TRAP case
-	#define ON_FAILURE(cond, category, msg)                                                                            \
-		(::soa::Assert::contract_fail_handler(VIOLATION(cond, category, msg)),                                         \
-		 TRAP_WITH_MSG(#cond, __FILE__ ":" STRINGIFY(__LINE__) ": " msg category))
+#define ON_FAILURE(cond, category, msg)                                                                                \
+    (::soa::Assert::contract_fail_handler(VIOLATION(cond, category, msg)),                                             \
+     TRAP_WITH_MSG(#cond, __FILE__ ":" STRINGIFY(__LINE__) ": " msg category))
 #elif ASSERT_MODE == ASSERT_MODE_ABORT
-	#define ON_FAILURE(cond, category, msg)                                                                            \
-		(::soa::Assert::contract_fail_handler(VIOLATION(cond, category, msg)), std::abort())
+#define ON_FAILURE(cond, category, msg)                                                                                \
+    (::soa::Assert::contract_fail_handler(VIOLATION(cond, category, msg)), std::abort())
 #elif ASSERT_MODE == ASSERT_MODE_LOG_ABORT
-	#define ON_FAILURE(cond, category, msg) std::abort()
+#define ON_FAILURE(cond, category, msg) std::abort()
 #endif
 
 #if ASSERT_MODE == ASSERT_MODE_NONE
-	#define CONTRACT_ASSERT(cond, category, msg) ((void)0)
+#define CONTRACT_ASSERT(cond, category, msg) ((void)0)
 #else
-	#define CONTRACT_ASSERT(cond, category, msg) ((cond) ? (void)0 : ON_FAILURE(cond, category, msg))
+#define CONTRACT_ASSERT(cond, category, msg) ((cond) ? (void)0 : ON_FAILURE(cond, category, msg))
 #endif
 
 // Individual assertions are grouped into assertion categories. Each hardening mode enables a
@@ -208,52 +205,52 @@ namespace soa {
 // For all assertions that haven't been categorized yet.
 #if HARDENING_MODE == HARDENING_MODE_NONE
 
-	#define ASSERT_VALID_INPUT_RANGE(expression, message) ((void)0)
-	#define ASSERT_VALID_ELEMENT_ACCESS(expression, message) ((void)0)
-	#define ASSERT_NON_NULL(expression, message) ((void)0)
-	#define ASSERT_NON_OVERLAPPING_RANGES(expression, message) ((void)0)
-	#define ASSERT_VALID_DEALLOCATION(expression, message) ((void)0)
-	#define ASSERT_VALID_EXTERNAL_API_CALL(expression, message) ((void)0)
-	#define ASSERT_COMPATIBLE_ALLOCATOR(expression, message) ((void)0)
-	#define ASSERT_ARGUMENT_WITHIN_DOMAIN(expression, message) ((void)0)
-	#define ASSERT_PEDANTIC(expression, message) ((void)0)
-	#define ASSERT_UNCATEGORIZED(expression, message) ((void)0)
+#define ASSERT_VALID_INPUT_RANGE(expression, message) ((void)0)
+#define ASSERT_VALID_ELEMENT_ACCESS(expression, message) ((void)0)
+#define ASSERT_NON_NULL(expression, message) ((void)0)
+#define ASSERT_NON_OVERLAPPING_RANGES(expression, message) ((void)0)
+#define ASSERT_VALID_DEALLOCATION(expression, message) ((void)0)
+#define ASSERT_VALID_EXTERNAL_API_CALL(expression, message) ((void)0)
+#define ASSERT_COMPATIBLE_ALLOCATOR(expression, message) ((void)0)
+#define ASSERT_ARGUMENT_WITHIN_DOMAIN(expression, message) ((void)0)
+#define ASSERT_PEDANTIC(expression, message) ((void)0)
+#define ASSERT_UNCATEGORIZED(expression, message) ((void)0)
+#define ASSERT_INTERNAL(expression, message) ((void)0)
 
 #elif HARDENING_MODE == HARDENING_MODE_FAST
 
-	// Enabled checks.
-	#define ASSERT_VALID_INPUT_RANGE(expression, message) CONTRACT_ASSERT(expression, "valid-input-range", message)
-	#define ASSERT_VALID_ELEMENT_ACCESS(expression, message)                                                           \
-		CONTRACT_ASSERT(expression, "valid-element-access", message)
+// Enabled checks.
+#define ASSERT_VALID_INPUT_RANGE(expression, message) CONTRACT_ASSERT(expression, "valid-input-range", message)
+#define ASSERT_VALID_ELEMENT_ACCESS(expression, message) CONTRACT_ASSERT(expression, "valid-element-access", message)
   // Disabled checks.
-	// On most modern platforms, dereferencing a null pointer does not
-	// lead to an actual memory access.
-	#define ASSERT_NON_NULL(expression, message) ((void)0)
-	#define ASSERT_NON_OVERLAPPING_RANGES(expression, message) ((void)0)
-	#define ASSERT_VALID_DEALLOCATION(expression, message) ((void)0)
-	#define ASSERT_VALID_EXTERNAL_API_CALL(expression, message) ((void)0)
-	#define ASSERT_COMPATIBLE_ALLOCATOR(expression, message) ((void)0)
-	#define ASSERT_ARGUMENT_WITHIN_DOMAIN(expression, message) ((void)0)
-	#define ASSERT_PEDANTIC(expression, message) ((void)0)
-	#define ASSERT_UNCATEGORIZED(expression, message) ((void)0)
+// On most modern platforms, dereferencing a null pointer does not
+// lead to an actual memory access.
+#define ASSERT_NON_NULL(expression, message) ((void)0)
+#define ASSERT_NON_OVERLAPPING_RANGES(expression, message) ((void)0)
+#define ASSERT_VALID_DEALLOCATION(expression, message) ((void)0)
+#define ASSERT_VALID_EXTERNAL_API_CALL(expression, message) ((void)0)
+#define ASSERT_COMPATIBLE_ALLOCATOR(expression, message) ((void)0)
+#define ASSERT_ARGUMENT_WITHIN_DOMAIN(expression, message) ((void)0)
+#define ASSERT_PEDANTIC(expression, message) ((void)0)
+#define ASSERT_UNCATEGORIZED(expression, message) ((void)0)
+#define ASSERT_INTERNAL(expression, message) ((void)0)
 
 #elif HARDENING_MODE == HARDENING_MODE_DEBUG
   // Enabled checks.
-	#define ASSERT_VALID_INPUT_RANGE(expression, message) CONTRACT_ASSERT(expression, "valid-input-range", message)
-	#define ASSERT_VALID_ELEMENT_ACCESS(expression, message)                                                           \
-		CONTRACT_ASSERT(expression, "valid-element-access", message)
-	#define ASSERT_NON_NULL(expression, message) CONTRACT_ASSERT(expression, "non-null", message)
-	#define ASSERT_NON_OVERLAPPING_RANGES(expression, message)                                                         \
-		CONTRACT_ASSERT(expression, "non-overlapping-ranges", message)
-	#define ASSERT_VALID_DEALLOCATION(expression, message) CONTRACT_ASSERT(expression, "valid-deallocation", message)
-	#define ASSERT_VALID_EXTERNAL_API_CALL(expression, message)                                                        \
-		CONTRACT_ASSERT(expression, "valid-external-api-call", message)
-	#define ASSERT_COMPATIBLE_ALLOCATOR(expression, message)                                                           \
-		CONTRACT_ASSERT(expression, "compatible-allocator", message)
-	#define ASSERT_ARGUMENT_WITHIN_DOMAIN(expression, message)                                                         \
-		CONTRACT_ASSERT(expression, "argument-within-domain", message)
-	#define ASSERT_PEDANTIC(expression, message) CONTRACT_ASSERT(expression, "pedantic", message)
-	#define ASSERT_UNCATEGORIZED(expression, message) CONTRACT_ASSERT(expression, "uncategorized", message)
+#define ASSERT_VALID_INPUT_RANGE(expression, message) CONTRACT_ASSERT(expression, "valid-input-range", message)
+#define ASSERT_VALID_ELEMENT_ACCESS(expression, message) CONTRACT_ASSERT(expression, "valid-element-access", message)
+#define ASSERT_NON_NULL(expression, message) CONTRACT_ASSERT(expression, "non-null", message)
+#define ASSERT_NON_OVERLAPPING_RANGES(expression, message)                                                             \
+    CONTRACT_ASSERT(expression, "non-overlapping-ranges", message)
+#define ASSERT_VALID_DEALLOCATION(expression, message) CONTRACT_ASSERT(expression, "valid-deallocation", message)
+#define ASSERT_VALID_EXTERNAL_API_CALL(expression, message)                                                            \
+    CONTRACT_ASSERT(expression, "valid-external-api-call", message)
+#define ASSERT_COMPATIBLE_ALLOCATOR(expression, message) CONTRACT_ASSERT(expression, "compatible-allocator", message)
+#define ASSERT_ARGUMENT_WITHIN_DOMAIN(expression, message)                                                             \
+    CONTRACT_ASSERT(expression, "argument-within-domain", message)
+#define ASSERT_PEDANTIC(expression, message) CONTRACT_ASSERT(expression, "pedantic", message)
+#define ASSERT_UNCATEGORIZED(expression, message) CONTRACT_ASSERT(expression, "uncategorized", message)
+#define ASSERT_INTERNAL(expression, message) CONTRACT_ASSERT(expression, "internal", message)
 #endif
 
 // Concat macro.
@@ -263,29 +260,32 @@ namespace soa {
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
 namespace soa {
-	// This scope guard is an RAII wrapper.
-	template <typename Func> struct PostConditionScopeGuard {
-		Func func_;
-		int exceptions_;
+// This scope guard is an RAII wrapper.
+template <typename Func>
+struct PostConditionScopeGuard {
+    Func func_;
+    int exceptions_;
 
-		explicit PostConditionScopeGuard(const Func &func) : func_(func), exceptions_{std::uncaught_exceptions()} {}
+    explicit PostConditionScopeGuard(const Func& func)
+        : func_(func)
+        , exceptions_{std::uncaught_exceptions()} {}
 
-		~PostConditionScopeGuard() {
-			if (std::uncaught_exceptions() == exceptions_) {
-				func_();
-			}
-		}
-	};
+    ~PostConditionScopeGuard() {
+        if (std::uncaught_exceptions() == exceptions_) {
+            func_();
+        }
+    }
+};
 } // namespace soa
 
 #if HARDENING_MODE == HARDENING_MODE_DEBUG
-	#define RECORD_OLD_VALUE(var_name, expression) const auto var_name = (expression)
-	#define CONTRACT_POSTCONDITION(expression, msg)                                                                    \
-		::soa::PostConditionScopeGuard CONCAT(_postcondition_, __COUNTER__){                                           \
-		    [&] { CONTRACT_ASSERT(expression, "post-condition", msg); }};
+#define RECORD_OLD_VALUE(var_name, expression) const auto var_name = (expression)
+#define CONTRACT_POSTCONDITION(expression, msg)                                                                        \
+    ::soa::PostConditionScopeGuard CONCAT(_postcondition_,                                                             \
+                                          __COUNTER__){[&] { CONTRACT_ASSERT(expression, "post-condition", msg); }};
 #else
-	#define RECORD_OLD_VALUE(expression, var_name) ((void)0)
-	#define CONTRACT_POSTCONDITION(expression, msg) ((void)0)
+#define RECORD_OLD_VALUE(expression, var_name) ((void)0)
+#define CONTRACT_POSTCONDITION(expression, msg) ((void)0)
 #endif
 
 #endif
